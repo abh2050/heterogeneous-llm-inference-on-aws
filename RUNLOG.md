@@ -134,6 +134,9 @@ Findings:
 - **Cap of 256 (C):** no measurable effect on this workload.
 - **Methodology lesson:** the first run after a server restart includes warm-up. The original cold rate-56 runs for A and C showed p99 TTFT of about 4300 ms against 207 ms warm. Always discard or pre-run a warm-up before measuring. `scripts/tuning_warm.sh` is the corrected re-check; cold rows are kept in `results/gpu/tuning/memA|seqB|seqC/` for reference. Config B's rate-56 row was also cold and was not rerun, but its `inf` row is the clear result.
 
+### GPU instance stopped
+`i-059b382e5ff82b2fc` stopped after 5.3 (about 21:47 to about 23:00 UTC, roughly 1.3 h of compute, about $1.05). Disk keeps billing at about $0.01/hr. Public IP changes on start: update `HostName` in `~/.ssh/config`, and restart the server by hand (tmux session is gone).
+
 ## Still to do
 - GPU rag sweep results; then 5.3 tuning (configs A/B/C) before stopping the GPU.
 - Stop GPU, then Phase 3 (CPU node), CPU sweeps, restart GPU for Gate 3b and 5.4 (router, offload A/B).
