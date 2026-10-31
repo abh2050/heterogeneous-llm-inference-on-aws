@@ -1,0 +1,5 @@
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/338 [00:00<?, ?it/s]Loading weights: 100%|██████████| 338/338 [00:00<00:00, 4649.82it/s]
+{'engine': 'hf', 'batch': 1, 'seconds': 2.964298725128174, 'tok_per_s': 43.180533363575016}
+{'engine': 'hf', 'batch': 8, 'seconds': 3.0750908851623535, 'tok_per_s': 332.9982879338334}
+{'engine': 'hf', 'batch': 32, 'seconds': 3.1835644245147705, 'tok_per_s': 1286.6081705333481}

@@ -1,0 +1,4 @@
+.venv/
+*.pem
+__pycache__/
+env.sh

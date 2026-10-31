@@ -1,0 +1,9 @@
+global:
+  scrape_interval: 5s
+scrape_configs:
+  - job_name: vllm
+    static_configs:
+      - targets: ["host.docker.internal:18000"]
+        labels: {node: gpu}
+      - targets: ["host.docker.internal:28000"]
+        labels: {node: cpu}

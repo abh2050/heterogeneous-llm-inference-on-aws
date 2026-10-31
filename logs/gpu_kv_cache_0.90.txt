@@ -1,0 +1,3 @@
+(EngineCore pid=2490) INFO 10-31 21:51:50 [gpu_worker.py:625] Available KV cache memory: 15.37 GiB
+(EngineCore pid=2490) INFO 10-31 21:51:50 [gpu_worker.py:640] CUDA graph memory profiling is enabled (default since v0.21.0). The current --gpu-memory-utilization=0.9000 is equivalent to --gpu-memory-utilization=0.8841 without CUDA graph memory profiling. To maintain the same effective KV cache size as before, increase --gpu-memory-utilization to 0.9159. To disable, set VLLM_MEMORY_PROFILER_ESTIMATE_CUDAGRAPHS=0.
+(EngineCore pid=2490) INFO 10-31 21:51:50 [kv_cache_utils.py:2032] GPU KV cache size: 575,440 tokens, Maximum concurrency for 4,096 tokens per request: 140.49x
