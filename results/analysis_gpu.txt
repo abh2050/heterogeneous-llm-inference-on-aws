@@ -1,0 +1,22 @@
+node shape rate  out_tok_s  p99_ttft_ms  p99_itl_ms  meets_slo  usd_per_1M_out
+ gpu  chat    1      126.8           60        20.3       True           1.763
+ gpu  chat    2      253.0           48        15.3       True           0.884
+ gpu  chat    4      499.8           49        16.2       True           0.447
+ gpu  chat    8      974.0           54        17.9       True           0.230
+ gpu  chat   16     1847.7           64        20.9       True           0.121
+ gpu  chat   32     3244.9          110        38.3       True           0.069
+ gpu  chat   40     3694.9          144        47.8       True           0.061
+ gpu  chat   48     3986.5          175        56.4       True           0.056
+ gpu  chat   64     4110.6         1294        71.1      False           0.054
+ gpu  chat   56     4223.9          207        64.8       True           0.053
+ gpu  chat  inf     5010.8         5452        82.4      False           0.045
+ gpu   rag    1      252.6          299       117.1      False           0.885
+ gpu   rag    2      496.3          449       134.1      False           0.450
+ gpu   rag  inf      639.3       106233       478.7      False           0.350
+ gpu   rag   16      639.7        87603       474.7      False           0.349
+ gpu   rag    8      640.6        68701       476.7      False           0.349
+ gpu   rag    4      662.1        27503       462.4      False           0.338
+
+Capacity at SLO (highest throughput row that meets the SLO):
+node shape rate  out_tok_s  p99_ttft_ms  p99_itl_ms  meets_slo  usd_per_1M_out
+ gpu  chat   56     4223.9          207        64.8       True           0.053

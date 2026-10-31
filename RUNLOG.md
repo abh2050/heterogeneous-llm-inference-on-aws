@@ -85,8 +85,20 @@ Caveat: at 56 req/s, 300 prompts last only about 5 s, so these high-rate runs ar
 
 Files: `results/gpu/gpu_chat_r*.json`, `logs/sweep_gpu_chat.log`, `logs/sweep_gpu_chat2.log`, `results/analysis_gpu_chat.txt`.
 
-### Phase 5.2: GPU rag sweep (2048 in / 256 out): in progress
-Rates 1 2 4 8 16 inf, tmux session `sweep2`, log `~/sweep_gpu_rag.log` on the node.
+### Phase 5.2: GPU rag sweep (2048 in / 256 out, 300 prompts per rate, seed 42)
+
+| Rate | Out tok/s | p99 TTFT ms | p99 ITL ms | Meets SLO | $/1M out |
+|---|---|---|---|---|---|
+| 1 | 252.6 | 299 | 117.1 | no (ITL) | 0.885 |
+| 2 | 496.3 | 449 | 134.1 | no (ITL) | 0.450 |
+| 4 | 662.1 | 27503 | 462.4 | no | 0.338 |
+| 8 | 640.6 | 68701 | 476.7 | no | 0.349 |
+| 16 | 639.7 | 87603 | 474.7 | no | 0.349 |
+| inf | 639.3 | 106233 | 478.7 | no | 0.350 |
+
+**GPU rag: no tested rate meets the strict SLO.** p99 ITL is already 117 ms at 1 req/s, caused by long prefills stalling other streams (prefill interference). On TTFT alone the knee is between 2 and 4 req/s, and throughput saturates near 650 tok/s (about 2.5 req/s). Rates below 1 req/s were not tested, so the exact rate where ITL drops under 100 ms is unknown.
+
+Files: `results/gpu/gpu_rag_r*.json`, `logs/sweep_gpu_rag.log`, `results/analysis_gpu.txt`.
 
 ## Still to do
 - GPU rag sweep results; then 5.3 tuning (configs A/B/C) before stopping the GPU.
