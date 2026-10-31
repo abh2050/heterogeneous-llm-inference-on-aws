@@ -100,6 +100,40 @@ Files: `results/gpu/gpu_chat_r*.json`, `logs/sweep_gpu_chat.log`, `logs/sweep_gp
 
 Files: `results/gpu/gpu_rag_r*.json`, `logs/sweep_gpu_rag.log`, `results/analysis_gpu.txt`.
 
+### Phase 5.3: memory and concurrency tuning (GPU, chat shape)
+
+KV cache pools from the server logs (`logs/tuning/*_server.log`):
+
+| Config | Flags | KV pool (tokens) | Max concurrency at 4096 |
+|---|---|---|---|
+| baseline | `--gpu-memory-utilization 0.90` | 575,440 | 140.5x |
+| A | `--gpu-memory-utilization 0.50` | 272,832 | 66.6x |
+| B | 0.90, `--max-num-seqs 16` | 590,800 | 144.2x |
+| C | 0.90, `--max-num-seqs 256` | 602,928 | 147.2x |
+
+Saturated throughput (rate `inf`, second run on each server, so warm):
+
+| Config | Out tok/s | p99 TTFT ms | p99 ITL ms |
+|---|---|---|---|
+| baseline | 5011 | 5452 | 82.4 |
+| A (0.50) | 5000 | 5458 | 87.1 |
+| B (16 seqs) | 1063 | 34272 | 16.9 |
+| C (256 seqs) | 5071 | 5358 | 84.6 |
+
+Rate 56 req/s, **warm** servers (`results/gpu/tuning/*_warm/`):
+
+| Config | Out tok/s | p99 TTFT ms | p99 ITL ms |
+|---|---|---|---|
+| baseline | 4224 | 207 | 64.8 |
+| A (0.50) | 4238 | 199 | 62.8 |
+| C (256 seqs) | 4246 | 206 | 63.4 |
+
+Findings:
+- **Memory (A):** `--gpu-memory-utilization` sets the pool size. Halving it cut the pool by 53% (575k to 273k tokens). Capacity did not change, because a chat request needs only about 11 MB of KV cache, so even 273k tokens holds hundreds of them. A smaller pool would matter only for long-context or very high-concurrency loads.
+- **Concurrency cap (B):** `--max-num-seqs 16` cut saturated throughput by 4.7x (5011 to 1063 tok/s) while the KV pool was nearly empty. The scheduler, not memory, was the limit. p99 ITL was very low (16.9 ms) because only 16 streams share each step: a latency-for-throughput trade.
+- **Cap of 256 (C):** no measurable effect on this workload.
+- **Methodology lesson:** the first run after a server restart includes warm-up. The original cold rate-56 runs for A and C showed p99 TTFT of about 4300 ms against 207 ms warm. Always discard or pre-run a warm-up before measuring. `scripts/tuning_warm.sh` is the corrected re-check; cold rows are kept in `results/gpu/tuning/memA|seqB|seqC/` for reference. Config B's rate-56 row was also cold and was not rerun, but its `inf` row is the clear result.
+
 ## Still to do
 - GPU rag sweep results; then 5.3 tuning (configs A/B/C) before stopping the GPU.
 - Stop GPU, then Phase 3 (CPU node), CPU sweeps, restart GPU for Gate 3b and 5.4 (router, offload A/B).
