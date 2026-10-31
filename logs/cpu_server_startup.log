@@ -1,0 +1,91 @@
+WARNING 10-31 22:47:24 [argparse_utils.py:276] With `vllm serve`, you should provide the model as a positional argument or in a config file instead of via the `--model` option. The `--model` option will be removed in a future version.
+(APIServer pid=1) INFO 10-31 22:47:24 [api_utils.py:347] 
+(APIServer pid=1) INFO 10-31 22:47:24 [api_utils.py:347]        █     █     █▄   ▄█
+(APIServer pid=1) INFO 10-31 22:47:24 [api_utils.py:347]  ▄▄ ▄█ █     █     █ ▀▄▀ █  version 0.29.0
+(APIServer pid=1) INFO 10-31 22:47:24 [api_utils.py:347]   █▄█▀ █     █     █     █  model   Qwen/Qwen2.5-1.5B-Instruct
+(APIServer pid=1) INFO 10-31 22:47:24 [api_utils.py:347]    ▀▀  ▀▀▀▀▀ ▀▀▀▀▀ ▀     ▀
+(APIServer pid=1) INFO 10-31 22:47:24 [api_utils.py:347] 
+(APIServer pid=1) INFO 10-31 22:47:24 [api_utils.py:286] non-default args: {'model_tag': 'Qwen/Qwen2.5-1.5B-Instruct', 'model': 'Qwen/Qwen2.5-1.5B-Instruct', 'dtype': 'bfloat16', 'max_model_len': 4096}
+(APIServer pid=1) Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+(APIServer pid=1) INFO 10-31 22:47:31 [model.py:684] Resolved architecture: Qwen2ForCausalLM
+(APIServer pid=1) INFO 10-31 22:47:31 [model.py:2021] Using max model len 4096
+(APIServer pid=1) INFO 10-31 22:47:31 [kernel.py:369] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'])
+(APIServer pid=1) WARNING 10-31 22:47:31 [cpu.py:255] Reset SSM cache type to float32 for accelerated GDN mamba backend 'none'.
+(EngineCore pid=113) INFO 10-31 22:47:38 [core.py:123] Initializing a V1 LLM engine (v0.29.0) with config: model='Qwen/Qwen2.5-1.5B-Instruct', speculative_config=None, tokenizer='Qwen/Qwen2.5-1.5B-Instruct', skip_tokenizer_init=False, tokenizer_mode=auto, revision=main, tokenizer_revision=main, trust_remote_code=False, dtype=torch.bfloat16, max_seq_len=4096, download_dir=None, load_format=auto, tensor_parallel_size=1, pipeline_parallel_size=1, data_parallel_size=1, decode_context_parallel_size=1, dcp_comm_backend=ag_rs, disable_custom_all_reduce=True, quantization=None, quantization_config=None, enforce_eager=False, enable_return_routed_experts=False, kv_cache_dtype=auto, device_config=cpu, structured_outputs_config=StructuredOutputsConfig(backend='auto', disable_any_whitespace=False, disable_additional_properties=False, reasoning_parser='', reasoning_parser_plugin='', enable_in_reasoning=False), observability_config=ObservabilityConfig(show_hidden_metrics_for_version=None, otlp_traces_endpoint=None, collect_detailed_traces=None, per_request_spec_decode_metrics='none', kv_cache_metrics=False, kv_cache_metrics_sample=0.01, cudagraph_metrics=False, enable_layerwise_nvtx_tracing=False, enable_mfu_metrics=False, enable_mm_processor_stats=False, enable_logging_iteration_details=False, jit_monitor_mode='warn', jit_monitor_verbose=False), seed=0, served_model_name=Qwen/Qwen2.5-1.5B-Instruct, enable_prefix_caching=True, enable_chunked_prefill=True, pooler_config=None, compilation_config={'mode': <CompilationMode.DYNAMO_TRACE_ONCE: 2>, 'debug_dump_path': None, 'cache_dir': '', 'compile_cache_save_format': 'binary', 'backend': 'inductor', 'custom_ops': ['none'], 'ir_enable_torch_wrap': False, 'splitting_ops': [], 'compile_mm_encoder': False, 'cudagraph_mm_encoder': False, 'encoder_cudagraph_token_budgets': [], 'encoder_cudagraph_max_vision_items_per_batch': 0, 'encoder_cudagraph_max_frames_per_batch': None, 'compile_sizes': None, 'compile_ranges_endpoints': [2048], 'inductor_compile_config': {'enable_auto_functionalized_v2': False, 'dce': True, 'size_asserts': False, 'nan_asserts': False, 'epilogue_fusion': True, 'cpp.dynamic_threads': True}, 'inductor_passes': {}, 'cudagraph_mode': <CUDAGraphMode.NONE: 0>, 'cudagraph_num_of_warmups': 0, 'cudagraph_capture_sizes': [], 'cudagraph_copy_inputs': False, 'cudagraph_specialize_lora': True, 'use_inductor_graph_partition': False, 'pass_config': {'fuse_norm_quant': False, 'fuse_act_quant': False, 'fuse_attn_quant': False, 'enable_sp': False, 'fuse_gemm_comms': False, 'fuse_allreduce_rms': False, 'enable_qk_norm_rope_fusion': False, 'fuse_rope_kvcache_cat_mla': False, 'fuse_act_padding': False, 'fuse_qk_norm_rope_kvcache': False}, 'max_cudagraph_capture_size': None, 'dynamic_shapes_config': {'type': <DynamicShapesType.BACKED: 'backed'>, 'evaluate_guards': False, 'assume_32_bit_indexing': False}, 'local_cache_dir': None, 'fast_moe_cold_start': False, 'static_all_moe_layers': []}, kernel_config=KernelConfig(ir_op_priority=IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native']), enable_flashinfer_autotune=True, enable_cutedsl_warmup=True, enable_jit_warmup=True, enable_bf16x3_router_gemm=False, moe_backend='auto', linear_backend='auto')
+(EngineCore pid=113) INFO 10-31 22:47:38 [multiproc_executor.py:153] DP group leader: node_rank=0, node_rank_within_dp=0, master_addr=127.0.0.1, mq_connect_ip=172.31.37.221 (local), world_size=1, local_world_size=1
+(EngineCore pid=113) INFO 10-31 22:47:38 [ompmultiprocessing.py:185] OpenMP thread binding info: 
+(EngineCore pid=113) INFO 10-31 22:47:38 [ompmultiprocessing.py:185] 	VLLM_CPU_OMP_THREADS_BIND='0-6', auto_setup=False, skip_setup=False
+(EngineCore pid=113) INFO 10-31 22:47:38 [ompmultiprocessing.py:185] 	local_world_size=1, reserve_cpu_num=1
+(EngineCore pid=113) INFO 10-31 22:47:38 [ompmultiprocessing.py:185] 	local_rank=0, core ids=[0, 1, 2, 3, 4, 5, 6]
+(EngineCore pid=113) INFO 10-31 22:47:38 [ompmultiprocessing.py:185] 	reserved_cpus=[]
+[W1031 22:47:44.570072462 utils.cpp:68] Warning: NUMA binding: Using MEMBIND policy for memory allocation on the NUMA nodes (0). Memory allocations will be strictly bound to these NUMA nodes. (function init_cpu_memory_env)
+(Worker pid=167) INFO 10-31 22:47:44 [parallel_state.py:1775] world_size=1 rank=0 local_rank=0 distributed_init_method=file:///tmp/vllm_dist_49f8c51ae2694f1ab3083ee74dff0710 backend=gloo
+(Worker pid=167) INFO 10-31 22:47:44 [parallel_state.py:2119] rank 0 in world size 1 is assigned as DP rank 0, PP rank 0, PCP rank 0, TP rank 0, EP rank N/A, EPLB rank N/A
+(Worker pid=167) INFO 10-31 22:47:44 [cpu_worker.py:175] Using V2 Model Runner
+(Worker pid=167) INFO 10-31 22:47:44 [model_runner.py:382] Loading model from scratch...
+(Worker pid=167) INFO 10-31 22:48:20 [weight_utils.py:526] Time spent downloading weights for Qwen/Qwen2.5-1.5B-Instruct: 35.428294 seconds
+(Worker pid=167) INFO 10-31 22:48:20 [weight_utils.py:863] Filesystem type for checkpoints: EXT4. Checkpoint size: 2.88 GiB. Available RAM: 25.53 GiB.
+(Worker pid=167) INFO 10-31 22:48:20 [weight_utils.py:886] Auto-prefetch is disabled because the filesystem (EXT4) is not a recognized network FS (NFS/Lustre). If you want to force prefetching, start vLLM with --safetensors-load-strategy=prefetch.
+(Worker pid=167) Loading safetensors checkpoint shards:   0% Completed | 0/1 [00:00<?, ?it/s]
+(Worker pid=167) Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00,  4.15it/s]
+(Worker pid=167) Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00,  4.15it/s]
+(Worker pid=167) 
+(Worker pid=167) INFO 10-31 22:48:20 [default_loader.py:430] Loading weights took 0.28 seconds
+(Worker pid=167) INFO 10-31 22:48:21 [model_runner.py:404] Model loading took 5.34 GiB memory and 36.764517 seconds
+(EngineCore pid=113) INFO 10-31 22:48:21 [torch_utils.py:277] Reducing Torch threads from 8 to 1 for serving. Set OMP_NUM_THREADS in the external environment to override.
+(EngineCore pid=113) INFO 10-31 22:48:21 [utils.py:306] Using LBHNC KV cache layout.
+(Worker pid=167) INFO 10-31 22:48:21 [model_runner.py:13] Warming up model for the compilation...
+(Worker pid=167) INFO 10-31 22:49:05 [decorators.py:719] saved AOT compiled function to /root/.cache/vllm/torch_compile_cache/torch_aot_compile/b959ea4cb04b02083c48d1dc8939c14b899a2ec97534d7720c0f7a555f487cfc/rank_0_0/model
+(Worker pid=167) INFO 10-31 22:49:06 [monitor.py:81] Initial profiling/warmup run took 0.67 s
+(Worker pid=167) INFO 10-31 22:49:09 [model_runner.py:16] Warming up done.
+(Worker pid=167) INFO 10-31 22:49:09 [cpu_worker.py:255] Explicitly set (12.0/30.81) GiB for KV cache on node 0.
+(EngineCore pid=113) INFO 10-31 22:49:09 [kv_cache_utils.py:2032] GPU KV cache size: 449,280 tokens, Maximum concurrency for 4,096 tokens per request: 109.69x
+(EngineCore pid=113) INFO 10-31 22:49:10 [core.py:368] init engine (profile, create kv cache, warmup model) took 48.97 s
+(EngineCore pid=113) Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+(EngineCore pid=113) WARNING 10-31 22:49:11 [vllm.py:1406] Inductor compilation was disabled by user settings, optimizations settings that are only active during inductor compilation will be ignored.
+(EngineCore pid=113) INFO 10-31 22:49:11 [kernel.py:369] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'])
+(APIServer pid=1) INFO 10-31 22:49:11 [entry.py:135] Supported tasks: ['generate']
+(APIServer pid=1) INFO 10-31 22:49:12 [hf.py:547] Detected the chat template content format to be 'string'. You can set `--chat-template-content-format` to override this.
+(APIServer pid=1) WARNING 10-31 22:49:12 [model.py:1759] Default vLLM sampling parameters have been overridden by the model's `generation_config.json`: `{'repetition_penalty': 1.1, 'temperature': 0.7, 'top_k': 20, 'top_p': 0.8}`. If this is not intended, please relaunch vLLM instance with `--generation-config vllm`.
+(APIServer pid=1) INFO 10-31 22:49:12 [entry.py:139] Starting vLLM server on http://0.0.0.0:8000
+(APIServer pid=1) INFO 10-31 22:49:12 [launcher.py:61] Available routes are:
+(APIServer pid=1) INFO 10-31 22:49:12 [launcher.py:70] Route: /openapi.json, Methods: HEAD, GET
+(APIServer pid=1) INFO 10-31 22:49:12 [launcher.py:70] Route: /docs, Methods: HEAD, GET
+(APIServer pid=1) INFO 10-31 22:49:12 [launcher.py:70] Route: /docs/oauth2-redirect, Methods: HEAD, GET
+(APIServer pid=1) INFO 10-31 22:49:12 [launcher.py:70] Route: /redoc, Methods: HEAD, GET
+(APIServer pid=1) INFO 10-31 22:49:12 [launcher.py:70] Route: /load, Methods: GET
+(APIServer pid=1) INFO 10-31 22:49:12 [launcher.py:70] Route: /version, Methods: GET
+(APIServer pid=1) INFO 10-31 22:49:12 [launcher.py:70] Route: /health, Methods: GET
+(APIServer pid=1) INFO 10-31 22:49:12 [launcher.py:70] Route: /metrics, Methods: GET
+(APIServer pid=1) INFO 10-31 22:49:12 [launcher.py:70] Route: /tokenize, Methods: POST
+(APIServer pid=1) INFO 10-31 22:49:12 [launcher.py:70] Route: /detokenize, Methods: POST
+(APIServer pid=1) INFO 10-31 22:49:12 [launcher.py:70] Route: /v1/models, Methods: GET
+(APIServer pid=1) INFO 10-31 22:49:12 [launcher.py:70] Route: /ping, Methods: GET
+(APIServer pid=1) INFO 10-31 22:49:12 [launcher.py:70] Route: /ping, Methods: POST
+(APIServer pid=1) INFO 10-31 22:49:12 [launcher.py:70] Route: /invocations, Methods: POST
+(APIServer pid=1) INFO 10-31 22:49:12 [launcher.py:70] Route: /v1/chat/completions, Methods: POST
+(APIServer pid=1) INFO 10-31 22:49:12 [launcher.py:70] Route: /v1/chat/completions/batch, Methods: POST
+(APIServer pid=1) INFO 10-31 22:49:12 [launcher.py:70] Route: /v1/responses, Methods: POST
+(APIServer pid=1) INFO 10-31 22:49:12 [launcher.py:70] Route: /v1/responses/{response_id}, Methods: GET
+(APIServer pid=1) INFO 10-31 22:49:12 [launcher.py:70] Route: /v1/responses/{response_id}/cancel, Methods: POST
+(APIServer pid=1) INFO 10-31 22:49:12 [launcher.py:70] Route: /v1/completions, Methods: POST
+(APIServer pid=1) INFO 10-31 22:49:12 [launcher.py:70] Route: /v1/messages, Methods: POST
+(APIServer pid=1) INFO 10-31 22:49:12 [launcher.py:70] Route: /v1/messages/count_tokens, Methods: POST
+(APIServer pid=1) INFO 10-31 22:49:12 [launcher.py:70] Route: /generative_scoring, Methods: POST
+(APIServer pid=1) INFO 10-31 22:49:12 [launcher.py:70] Route: /scale_elastic_ep, Methods: POST
+(APIServer pid=1) INFO 10-31 22:49:12 [launcher.py:70] Route: /is_scaling_elastic_ep, Methods: POST
+(APIServer pid=1) INFO 10-31 22:49:12 [launcher.py:70] Route: /v1/chat/completions/render, Methods: POST
+(APIServer pid=1) INFO 10-31 22:49:12 [launcher.py:70] Route: /v1/messages/render, Methods: POST
+(APIServer pid=1) INFO 10-31 22:49:12 [launcher.py:70] Route: /v1/completions/render, Methods: POST
+(APIServer pid=1) INFO 10-31 22:49:12 [launcher.py:70] Route: /v1/chat/completions/derender, Methods: POST
+(APIServer pid=1) INFO 10-31 22:49:12 [launcher.py:70] Route: /v1/completions/derender, Methods: POST
+(APIServer pid=1) INFO 10-31 22:49:12 [launcher.py:70] Route: /inference/v1/generate, Methods: POST
+(APIServer pid=1) INFO:     Started server process [1]
+(APIServer pid=1) INFO:     Waiting for application startup.
+(APIServer pid=1) INFO:     Application startup complete.
+(APIServer pid=1) INFO:     127.0.0.1:45820 - "GET /v1/models HTTP/1.1" 200 OK
+(EngineCore pid=113) INFO 10-31 22:50:31 [shm_broadcast.py:801] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization).
+(APIServer pid=1) INFO:     127.0.0.1:35622 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=1) INFO:     127.0.0.1:44764 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=1) INFO:     127.0.0.1:34276 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=1) INFO 10-31 22:50:52 [loggers.py:310] Engine 000: Avg prompt throughput: 1.2 tokens/s, Avg generation throughput: 12.8 tokens/s, Running: 0 reqs, Waiting: 0 reqs, GPU KV cache usage: 0.0%, Prefix cache hit rate: 0.0%

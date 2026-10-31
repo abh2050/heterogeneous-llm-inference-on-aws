@@ -137,6 +137,51 @@ Findings:
 ### GPU instance stopped
 `i-059b382e5ff82b2fc` stopped after 5.3 (about 21:47 to about 23:00 UTC, roughly 1.3 h of compute, about $1.05). Disk keeps billing at about $0.01/hr. Public IP changes on start: update `HostName` in `~/.ssh/config`, and restart the server by hand (tmux session is gone).
 
+### Phase 3: CPU node
+- Launched `c7i.4xlarge` **`i-00a898ce223f6d69e`** (AMI `ami-0ee52710c51e09069`, Ubuntu 22.04), public IP `77.113.207.41`, private IP `172.31.37.221`, 100 GB gp3. Running from about 22:40 UTC at $0.714/hr.
+- **Gate 3a passed:** flags `amx_bf16 amx_tile avx512_bf16 avx512f`; vCPUs 0-7 are distinct physical cores, 8-15 are their hyperthread siblings.
+- Docker 29.1.3; image `public.ecr.aws/q9t5s3a7/vllm-cpu-release-repo:v0.29.0` (7.8 GB).
+- Server: `VLLM_CPU_KVCACHE_SPACE=12`, `VLLM_CPU_OMP_THREADS_BIND=0-6` (deviation from the runbook's 0-7: core 7 left free for the API server and benchmark client). KV pool 449,280 tokens (109.7x concurrency at 4096). Startup about 2 min (`logs/cpu_server_startup.log`).
+- **Gate 3b, part 1 passed:** completions and `/metrics` work. Part 2 (GPU reaching `172.31.37.221:8000`) is pending until the GPU restarts.
+- **Cold start:** the first request took 85 s (one-time kernel warm-up); the second took 4.3 s for 64 tokens, so about 15 tok/s single-stream. `scripts/cpu_sweeps.sh` sends throwaway warm-up requests before measuring.
+
+### Phase 5.2: CPU sweeps (60 prompts per rate, seed 42)
+
+Chat (256 in / 128 out):
+
+| Rate | Out tok/s | p99 TTFT ms | p99 ITL ms | $/1M out |
+|---|---|---|---|---|
+| 0.25 | 30.8 | 420 | 244 | 6.438 |
+| 0.5 | 59.4 | 288 | 164 | 3.341 |
+| 1 | 110.4 | 963 | 191 | 1.796 |
+| 2 | 178.2 | 476 | 298 | 1.113 |
+| 4 | 254.0 | 709 | 419 | 0.781 |
+| 8 | 326.1 | 1733 | 822 | 0.608 |
+| 16 | 366.3 | 2781 | 1254 | 0.541 |
+| 32 | 366.9 | 3839 | 1263 | 0.541 |
+
+Rag (2048 in / 256 out):
+
+| Rate | Out tok/s | p99 TTFT ms | p99 ITL ms | $/1M out |
+|---|---|---|---|---|
+| 0.1 | 24.7 | 2198 | 83 | 8.019 |
+| 0.25 | 59.0 | 307 | 174 | 3.360 |
+| 0.5 | 108.5 | 406 | 211 | 1.829 |
+| 1 | 165.4 | 579 | 268 | 1.199 |
+| 2 | 215.6 | 754 | 367 | 0.920 |
+| 4 | 243.2 | 1060 | 530 | 0.816 |
+
+Findings:
+- **No CPU row meets the strict SLO** (p99 TTFT <= 1 s and p99 ITL <= 100 ms). p99 ITL is above 160 ms even at 0.25 req/s on chat.
+- **TTFT-only capacity** (p99 TTFT <= 1 s): chat 4 req/s (254 tok/s, $0.78/1M); rag 2 req/s (216 tok/s, $0.92/1M).
+- **Chat saturates** near 367 tok/s (about 2.9 req/s): throughput is flat from rate 16 to 32. Rag had not saturated at rate 4.
+- **Versus GPU:** saturated chat throughput 367 vs 5,011 tok/s (14x); $/1M at capacity $0.78 vs $0.053 (about 15x).
+- The 2198 ms TTFT at rag rate 0.1 is probably warm-up for the new prompt length (the next rates are all under 600 ms). Not rerun.
+- Extra rates (chat 8/16/32, rag 2/4) were added after the runbook's rates did not reach saturation. A harmless `bind [127.0.0.1]:28000: Address already in use` warning appeared (an existing SSH session holds the tunnel port).
+- Files: `results/cpu/cpu_*_r*.json`, `logs/cpu_sweeps.log`, `logs/cpu_sweeps2.log`, `results/analysis_all.txt`.
+
+**Offload experiment rates (5.4.4):** R_CHAT = 70% of GPU chat capacity = about 39 req/s. R_BG = CPU rag capacity on the TTFT-only yardstick = 2 req/s. That is close to the GPU's own rag saturation (about 2.5 req/s), so Run A should put the GPU under real pressure.
+
 ## Still to do
 - GPU rag sweep results; then 5.3 tuning (configs A/B/C) before stopping the GPU.
 - Stop GPU, then Phase 3 (CPU node), CPU sweeps, restart GPU for Gate 3b and 5.4 (router, offload A/B).
