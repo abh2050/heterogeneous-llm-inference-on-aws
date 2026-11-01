@@ -48,3 +48,20 @@ def test_quick_estimate_endpoint(model):
         out = client.post("/api/quick-estimate", json={"plan": plan, "users": 4}).json()
     assert out["users"] == 4 and len(out["rows"]) == len(boot["hardware"])
     assert out["label"] == "calculated, simplified" and out["advanced_label"] == "calculated, advanced"
+
+
+def test_llama31_70b_quick_estimate_from_local_example_config(hardware):
+    """Spec check: 70B BF16 weights and KV, 20 users, 32,768 context -> 140 GB weights, ~215 GB KV."""
+    import json
+    from pathlib import Path
+
+    from planner.hf_metadata import normalize
+
+    config = json.loads((Path(__file__).parent.parent / "examples/llama31-70b.config.json").read_text())
+    # The nominal "70B" size is used so the result matches the model name; no Hugging Face fetch happens.
+    model = normalize("meta-llama/Llama-3.1-70B-Instruct", None, config, parameters=70_000_000_000)
+    r = quick_estimate(model, hardware, bytes_per_parameter=2, kv_bytes=2, context=32768, users=20)
+    assert r["weights_gb"] == pytest.approx(140)
+    assert r["kv_gb"] == pytest.approx(214.7, abs=0.1)
+    assert r["label"] == "calculated, simplified"
+    assert not r["fits"]  # (140 + 214.7) x 1.10 = 390 GB exceeds one 80 GB device
