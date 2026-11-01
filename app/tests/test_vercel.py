@@ -112,3 +112,22 @@ def test_vercel_config_serves_web_statically_and_app_py_is_the_function():
     assert {"src": "/static/(.*)", "dest": "/$1"} in config["routes"]
     assert not (root / "api").exists()  # root app.py is Vercel's FastAPI entrypoint; an api/ file would shadow it
     assert (root / "app.py").exists() and "fastapi" in (root / "requirements.txt").read_text().lower()
+
+
+@pytest.mark.parametrize(
+    "env, expected",
+    [({"VERCEL": "1"}, "/tmp/huggingface"), ({"STORAGE_MODE": "vercel"}, "/tmp/huggingface"), ({}, None)],
+)
+def test_hf_cache_goes_to_tmp_on_vercel_only(env, expected):
+    import os
+    import subprocess
+    import sys
+
+    clean = {k: v for k, v in os.environ.items() if k not in {"VERCEL", "STORAGE_MODE", "HF_HOME"}}
+    out = subprocess.run(
+        [sys.executable, "-c", "import planner, os, huggingface_hub.constants as c; print(os.environ.get('HF_HOME'), c.HF_HOME)"],
+        env={**clean, **env}, capture_output=True, text=True, check=True,
+    ).stdout.split()
+    assert out[0] == str(expected)
+    if expected:
+        assert out[1] == expected
