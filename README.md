@@ -2,7 +2,9 @@
 
 This guide goes with the `vllm-hetero` runbook. That experiment serves `Qwen/Qwen2.5-1.5B-Instruct` from an NVIDIA L4 GPU node and an Intel Sapphire Rapids CPU node behind one router, and measures where each node is worth using.
 
-Each section explains one idea, names the phase that measures it, and ends with a **Predict** box. Write your prediction in the table at the bottom *before* you run that phase. Comparing your guesses with the measured numbers is where most of the learning happens.
+Each section explains one idea, names the phase that measures it, and ends with a **Predict** box. Write your prediction down *before* you run that phase. Comparing your guesses with the measured numbers is where most of the learning happens.
+
+**Study notebook.** [Open the NotebookLM notebook](https://notebooklm.link.google/H4cSGexBcIjw) for this project.
 
 **Repository layout.** This guide is the root README. The runbook is `PLAN.md`, measured results are in `RUNLOG.md`, `results/` and `logs/`, and the experiment scripts are in `scripts/`. `app/` holds Inference Atlas, a local capacity-planning web app built on these ideas. See [app/README.md](app/README.md) to run it.
 
@@ -218,35 +220,3 @@ Metric names change between vLLM versions. Check the live list with `curl …/me
 - Agrawal et al., *Sarathi-Serve* (OSDI 2024), on chunked prefill and the throughput–latency tradeoff.
 - Zhong et al., *DistServe* (OSDI 2024), and Patel et al., *Splitwise* (ISCA 2024), on prefill/decode disaggregation, including on heterogeneous hardware.
 - The vLLM docs on CPU installation, benchmarking (`vllm bench serve`), and the metrics reference.
-
----
-
-## Learning checklist and results
-
-Fill in the Predict column before each phase and the Measured column at its gate.
-
-| # | Question | Phase | Predict | Measured | Why the gap? |
-|---|---|---|---|---|---|
-| 1 | GPU KV pool tokens / max concurrency at 0.90 | 2.6 | | | |
-| 2 | GPU single-stream decode tok/s (vLLM, batch 1) | 5.1 | | | |
-| 3 | vLLM ÷ HF speedup, batch 1 | 5.1 | | | |
-| 4 | vLLM ÷ HF speedup, batch 32 | 5.1 | | | |
-| 5 | GPU chat capacity at SLO (req/s, tok/s) | 5.2 | | | |
-| 6 | GPU rag capacity at SLO | 5.2 | | | |
-| 7 | CPU chat capacity at SLO | 5.2 | | | |
-| 8 | CPU rag capacity at SLO (or "never meets SLO") | 5.2 | | | |
-| 9 | $/1M output tokens: GPU chat, CPU chat | 6 | | | |
-| 10 | Config A (0.50) KV pool and capacity change | 5.3 | | | |
-| 11 | Config B (max-num-seqs 16): what limits it | 5.3 | | | |
-| 12 | Router hop: added p50 TTFT (ms) | 5.4.3 | | | |
-| 13 | Offload: p99 TTFT and ITL, Run A vs. Run B | 5.4.4 | | | |
-
-**Concepts you should be able to explain afterward:**
-- [ ] Why prefill is compute-bound and decode is bandwidth-bound
-- [ ] How to compute KV cache size per token from a model config
-- [ ] Why continuous batching and PagedAttention raise throughput
-- [ ] What `gpu_memory_utilization`, `max_model_len`, and `max_num_seqs` each control
-- [ ] TTFT vs. ITL vs. TPOT, and why SLOs use p99
-- [ ] How to find a node's capacity from a rate sweep
-- [ ] How to turn hourly price and throughput into $/1M tokens
-- [ ] When a CPU tier earns its place in a heterogeneous backend, and when it doesn't
