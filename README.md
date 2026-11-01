@@ -1,224 +1,276 @@
-# Heterogeneous LLM inference: study guide
+# Heterogeneous LLM inference on AWS
 
-This guide goes with the `vllm-hetero` runbook. That experiment serves `Qwen/Qwen2.5-1.5B-Instruct` from an NVIDIA L4 GPU node and an Intel Sapphire Rapids CPU node behind one router, and measures where each node is worth using.
+This project asks a practical serving question:
 
-Each section explains one idea, names the phase that measures it, and ends with a **Predict** box. Write your prediction down *before* you run that phase. Comparing your guesses with the measured numbers is where most of the learning happens.
+> Can a fast GPU handle interactive chat while a slower CPU handles background RAG work, so that long prompts do not make chat users wait?
 
-**Study notebook.** [Open the NotebookLM notebook](https://notebooklm.link.google/H4cSGexBcIjw) for this project.
+To answer it, I built and benchmarked a small production-shaped inference service on AWS. The service ran the same model on two kinds of compute, put both behind a router, generated controlled traffic, and measured latency, throughput, capacity, and cost.
 
-**Interactive visual explainer.** [Open the Inference Stack Atlas](docs/index.html) for a layer-by-layer request journey and an interactive comparison of Intel, NVIDIA, and AMD inference stacks. The supporting source artifacts are the [full-stack draw.io diagram](claude-inference-stack.drawio) and the [NotebookLM mind map](NotebookLM%20Mind%20Map.png).
+The most important result was clear: **a small amount of long-prompt RAG traffic severely disrupted interactive chat when both shared the GPU. Routing the RAG work to the CPU restored most of the chat performance.** The CPU was not faster or cheaper per token; it was useful because it isolated a different workload.
 
-**Repository layout.** This guide is the root README. The runbook is `PLAN.md`, measured results are in `RUNLOG.md`, `results/` and `logs/`, and the experiment scripts are in `scripts/`. `app/` holds Inference Atlas, a local capacity-planning web app built on these ideas. See [app/README.md](app/README.md) to run it.
-
-The back-of-envelope numbers here are estimates from spec sheets. Expect real numbers to land somewhere between 30% and 80% of the theoretical ceilings.
+[Open the interactive stack explainer](docs/index.html) to follow a request through the system, compare Intel, NVIDIA, and AMD stacks, or build a reference architecture step by step.
 
 ---
 
-## 1. How one request is served
+## What this project contains
 
-An LLM generates text one token at a time. Each request goes through two phases.
+There are three related pieces:
 
-**Prefill.** The model reads the whole prompt in one forward pass. Every prompt token is processed in parallel, so this phase does many matrix multiplications per byte of weights it reads. Prefill is **compute-bound**: its speed depends on FLOPs.
-
-**Decode.** The model produces one new token per forward pass and feeds it back in. Each step reads *all* the weights from memory to do a small amount of math for one token per sequence. Decode is **memory-bandwidth-bound**: its speed depends on how fast the chip can stream the weights.
-
-That split explains most of what you will see:
-
-- **Time to first token (TTFT)** is mostly queueing time plus prefill time.
-- **Inter-token latency (ITL)** is the time of one decode step.
-- **Batching** helps decode a lot. One read of the weights serves every sequence in the batch, so 32 sequences cost about the same bandwidth as 1.
-
-### The roofline estimate
-
-A forward pass costs about **2 × parameters FLOPs per token**. A decode step has to read about **all of the weight bytes** once.
-
-| | L4 GPU | c7i.4xlarge CPU (8 physical cores) |
-|---|---|---|
-| Weights (1.54B params × 2 bytes bf16) | ~3.1 GB | ~3.1 GB |
-| Memory bandwidth | ~300 GB/s (GDDR6) | roughly 30–60 GB/s usable (your share of a DDR5 socket) |
-| Batch-1 decode ceiling = bandwidth ÷ weight bytes | **~95 tok/s** | **~10–20 tok/s** |
-| bf16 matrix throughput (peak) | ~120 TFLOPS (tensor cores, dense) | ~25 TFLOPS (AMX: 8 cores × ~1,024 bf16 FLOP/cycle × ~3 GHz) |
-| Prefill of a 2,048-token prompt (~6.3 TFLOP) at ~50% of peak | ~0.1 s | ~0.5–1 s |
-
-> **Predict.** What is the GPU's single-stream decode speed in tok/s? Will the CPU node meet a 1 s p99 TTFT on the 2,048-token `rag` shape even at a very low request rate?
-
----
-
-## 2. The KV cache
-
-During decode, attention needs the keys and values of every earlier token. Recomputing them at every step would be wasteful, so the engine stores them in a **KV cache**. The KV cache, not the weights, is what limits how many requests fit at once.
-
-**Size per token** = 2 (K and V) × layers × KV heads × head dim × bytes per value.
-
-Qwen2.5-1.5B has 28 layers, 2 KV heads, and a head dimension of 128. It uses **grouped-query attention (GQA)**: 12 query heads share 2 KV heads, which makes the cache 6× smaller than it would otherwise be.
-
-```
-2 × 28 × 2 × 128 × 2 bytes = 28,672 bytes ≈ 28 KB per token
-4,096-token request       ≈ 117 MB
-chat request (256 + 128)  ≈ 11 MB
-rag request (2,048 + 256) ≈ 66 MB
-```
-
-**Pool size on the L4.** vLLM claims `gpu_memory_utilization × total memory`. It subtracts the weights and the activation and CUDA-graph workspace, and turns the remainder into the KV pool.
-
-```
-0.90 × ~22.5 GB ≈ 20 GB − 3.1 GB weights − ~1.5 GB workspace ≈ 15–16 GB → ~550k tokens → ~130× 4,096-token requests
-0.50 × ~22.5 GB ≈ 11 GB − 3.1 GB − ~1.5 GB                  ≈ 6–7 GB   → ~230k tokens → ~55× 4,096-token requests
-```
-
-On the CPU node, the pool is simply `VLLM_CPU_KVCACHE_SPACE` (12 GB), which is about 440k tokens.
-
-> **Predict.** What will the Step 2.6 log line say for KV cache tokens and for "maximum concurrency for 4,096 tokens per request"? How far off is the Config A pool (0.50) in 5.3?
-
----
-
-## 3. What vLLM does differently from plain HuggingFace
-
-| Idea | What it does | Where you see it |
-|---|---|---|
-| **PagedAttention** | Stores the KV cache in fixed-size blocks, like OS memory pages. A request takes only the blocks it uses, so there is almost no fragmentation and no up-front reservation for `max_model_len`. | KV log line (2.6), Config A (5.3) |
-| **Continuous batching** | The scheduler adds and removes requests at every decode step. A finished request frees its slot immediately, and a new one joins on the next step. HF `generate()` uses a static batch that runs until the whole batch finishes. | Engine compare (5.1), sweeps (5.2) |
-| **CUDA graphs and fused kernels** | Records the decode step once and replays it, which removes Python and kernel-launch overhead. That overhead dominates for a small model at batch 1. | Engine compare at batch 1 |
-| **Prefix caching** | Reuses KV blocks for a shared prompt prefix. Step 5.1 turns it off because every prompt in the batch is identical, and HF has no such cache. | 5.1 |
-| **Chunked prefill** | Splits a long prefill into chunks and mixes those chunks with ongoing decode steps, so one huge prompt does not freeze every other stream. It is enabled by default in current vLLM. | Offload experiment (5.4) |
-| **Scheduler caps** | `--max-num-seqs` limits running sequences. `--max-num-batched-tokens` limits tokens per step. | Config B and C (5.3) |
-
-**The lab correction.** `--gpu-memory-utilization` sets the size of the pool. `--max-model-len` only caps the length of a single request, and with paging it does not shrink the pool.
-
-**A note on Step 5.1.** All prompts in that batch are identical, so HF does no padding there. Any vLLM advantage you see comes from per-step overhead (CUDA graphs, kernels, the scheduler), not from padding. Padding waste appears only when prompt lengths differ.
-
-> **Predict.** What is vLLM's speedup over HF at batch 1, and at batch 32? The runbook expects the two engines to be close at batch 1. A 1.5B model in eager HF is often launch-overhead-bound, so vLLM may be well ahead even there. Decide which you believe.
-
----
-
-## 4. Latency and throughput metrics
-
-| Metric | Meaning | What makes it grow |
-|---|---|---|
-| **TTFT** (time to first token) | Time from sending a request to receiving its first token | Queueing, long prompts |
-| **ITL** (inter-token latency) | Gap between consecutive streamed tokens | Large batches, and other requests' prefills sharing the step |
-| **TPOT** (time per output token) | Average decode time per token for one request, excluding the first token | Same causes as ITL, averaged per request |
-| **E2EL** (end-to-end latency) | Total request time ≈ TTFT + (output tokens − 1) × TPOT | Both of the above |
-| **Output throughput** | Total generated tok/s across all users | Batch size, until the node saturates |
-
-**p50 versus p99.** p50 is the typical user. p99 is the worst 1 in 100, and a service level objective (SLO) is written against it. Averages hide queueing spikes.
-
-**SLO in this experiment:** p99 TTFT ≤ 1 s and p99 ITL ≤ 100 ms.
-
-**Capacity at SLO**, also called **goodput**, is the highest load that still meets the SLO. Throughput measured beyond that point does not count, because users are already getting a slow service.
-
----
-
-## 5. Load testing and queueing
-
-**Open-loop load.** `--request-rate R` sends requests as a Poisson process averaging R per second, whether or not earlier requests have finished. That is how real traffic behaves. `inf` sends every request at once and measures raw maximum throughput.
-
-**The saturation knee.** As R climbs, throughput rises roughly linearly and latency stays flat. Then the node runs out of KV space, scheduler slots, or compute. From that point, throughput plateaus, `vllm:num_requests_waiting` rises above 0, and p99 TTFT shoots up because new requests are waiting in a queue.
-
-**Little's law:** requests in flight = arrival rate × time in system (L = λ × W). For example, 8 req/s × 2 s end-to-end means about 16 requests running at once. Use it to sanity-check the "running" panel in Grafana.
-
-**Making runs comparable.**
-- `--ignore-eos` forces exactly the requested output length.
-- `--seed 42` generates the same random prompts on every run.
-- The benchmark client runs on the server's machine, so network delay stays out of the engine numbers.
-
-> **Predict.** At roughly what chat request rate does the GPU hit the knee: 8, 16, 32, or 64 req/s? Where is the CPU's knee for chat?
-
----
-
-## 6. The hardware
-
-**NVIDIA L4 (g6.xlarge).** 24 GB of GDDR6 at about 300 GB/s, with tensor cores for bf16. It is a small inference GPU: it has plenty of compute for a 1.5B model, while memory bandwidth limits decode.
-
-**Intel Xeon Sapphire Rapids (c7i.4xlarge).** 16 vCPUs on 8 physical cores.
-- **AVX-512** provides wide vector math, and the **`avx512_bf16`** flag adds bf16 dot products.
-- **AMX** (Advanced Matrix Extensions; flags `amx_tile`, `amx_bf16`) adds a tile matrix-multiply unit inside each core. AMX is what makes CPU prefill workable at all.
-- **Hyperthreads.** Two vCPUs on one physical core share that core's AMX unit and caches, so the runbook pins one compute thread per physical core with `VLLM_CPU_OMP_THREADS_BIND`. The API server and the benchmark client need CPU time too, which is why leaving a core free can help.
-- **Memory bandwidth** is the CPU's decode bottleneck, just as on the GPU, but it is about 5–10× lower.
-
-**What CPU inference is good for.** Latency-tolerant, low-volume or bursty work: batch summarization, embeddings, offline evaluation, background RAG preprocessing. It also uses capacity you may already be paying for. CPU inference is a poor fit for interactive chat at scale.
-
----
-
-## 7. Heterogeneous serving: the reason for this project
-
-**Workload classes.** Interactive traffic cares about TTFT and ITL. Background or batch traffic cares about cost and eventual completion. Serving both from one pool means they interfere with each other.
-
-**Prefill interference.** When a 2,048-token RAG prompt lands in the same scheduler step as 30 streaming chats, that step takes longer, and every chat user sees a stall. Chunked prefill reduces the stall but does not remove it. The tail of the ITL distribution (p99) is where this shows up.
-
-**Routing.** LiteLLM exposes one OpenAI-compatible endpoint and maps a model *name* to a backend: `qwen-fast` → GPU, `qwen-batch` → CPU. Real systems route by API key, tenant, priority header, prompt length, or queue depth. Every router adds one network hop and some CPU work (Step 5.4.3 measures it).
-
-**Related designs worth knowing:**
-- **Prefill/decode disaggregation** (DistServe, Splitwise). Run prefill and decode on different machines, sometimes on different hardware types, and ship the KV cache between them.
-- **Priority scheduling** within a single pool, as the alternative to running a separate tier.
-- **Autoscaling** on queue depth or KV usage, versus a fixed CPU tier.
-
-> **Predict.** Will moving background RAG traffic to the CPU node visibly cut the GPU's p99 ITL and TTFT for chat users? One caveat: background load is capped at whatever the CPU node can handle, which may be too light to trouble the GPU in Run A. If Run B shows no gain, check whether Run A was under real pressure before concluding anything.
-
----
-
-## 8. Cost
-
-```
-$ per 1M output tokens = hourly price ÷ (output tok/s × 3,600) × 1,000,000
-```
-
-| Node | Price/hr (us-east-2) | Example: if it sustains… | $/1M output tokens |
-|---|---|---|---|
-| g6.xlarge | $0.8048 | 2,000 tok/s at SLO | ~$0.11 |
-| c7i.4xlarge | $0.7140 | 50 tok/s at SLO | ~$3.97 |
-
-Only rows that meet the SLO count toward capacity. Two consequences follow. A GPU can be *cheaper per token* than a CPU even though it costs more per hour, because it produces far more tokens. And a CPU tier is justified by *isolation* (Question 5) or by already-paid-for capacity, rarely by raw $/token.
-
-> **Predict.** What is the ratio of CPU to GPU $/1M tokens on the chat shape: 5×, 20×, or 50×?
-
----
-
-## 9. Observability
-
-- **Prometheus** pulls ("scrapes") the `/metrics` endpoint of each server every 5 s and stores time series.
-- **Metric types:**
-  - A **counter** only goes up (`vllm:generation_tokens_total`). Use `rate(...[1m])` to turn it into a per-second value.
-  - A **gauge** goes up and down (`vllm:num_requests_running`, `vllm:num_requests_waiting`, `vllm:kv_cache_usage_perc`).
-  - A **histogram** stores counts in buckets (`vllm:time_to_first_token_seconds_bucket`). `histogram_quantile(0.99, sum by (le, node) (rate(..._bucket[1m])))` estimates p99 from those buckets. The estimate is only as precise as the bucket edges.
-- **What to watch during a sweep:**
-  - `waiting` leaving 0 means saturation.
-  - KV usage near 100% means you are memory-limited.
-  - `waiting` > 0 while KV usage is low means a scheduler cap is the limit (Config B).
-
-Metric names change between vLLM versions. Check the live list with `curl …/metrics | grep '^vllm:'`.
-
----
-
-## 10. Experiment hygiene
-
-- **Hold everything constant except the one thing you are testing:** model, dtype, vLLM version, dataset seed, and prompt and output lengths.
-- **Warm up before timing.** The first call compiles kernels, captures CUDA graphs, and loads weights.
-- **Run one engine per process.** HF and vLLM must not share GPU memory.
-- **Keep the client next to the server** when you measure the engine. Measure the network or router hop separately.
-- **Save the raw JSON for every run**, with a descriptive filename, so you can re-analyze later without paying to re-run.
-- **Stop a sweep early** once p99 TTFT passes 10 s. Past that point you are only measuring how long the queue is.
-
----
-
-## 11. The AWS pieces, and why each is there
-
-| Piece | Why |
+| Piece | Purpose |
 |---|---|
-| **vCPU quotas** ("G and VT" vs. "Standard") | AWS limits instances by vCPU count per family. New accounts often have 0 GPU quota. |
-| **Security group with an SG-to-SG rule** | Port 22 is open to your IP only. Port 8000 is open only to members of the same group, so the nodes can reach each other and nobody else can. |
-| **SSH `LocalForward` tunnels** | Your Mac reaches the servers' ports without exposing those ports to the internet. |
-| **`Project=vllm-hetero` tag** | Lets one filter find everything for audit and teardown. |
-| **`DeleteOnTermination`** | Prevents orphaned EBS volumes from billing you after termination. |
-| **Stop vs. terminate** | A stopped instance stops compute billing but keeps disk billing and loses its public IP. Terminate when you are done. |
-| **Budget alert** | A safety net for the whole account, not just this project. |
+| **AWS experiment** | Measures how GPU, CPU, routing, batching, KV cache, and mixed workloads behave with real requests. This README explains it. |
+| **Interactive stack explainer** | Shows how gateways, routers, engines, runtimes, accelerators, networking, and operations fit together. [Open it](docs/index.html). |
+| **Inference Atlas** | Turns these ideas into a capacity-planning application. It estimates memory, speed, latency, and cost for other models and hardware. [Run the app](app/README.md). |
 
----
+The experiment produces evidence. The explainer makes the architecture legible. The planner helps apply the same reasoning to a new service.
 
-## 12. Further reading
+## The system we built
 
-- Kwon et al., *Efficient Memory Management for LLM Serving with PagedAttention* (SOSP 2023), the vLLM paper.
-- Yu et al., *Orca: A Distributed Serving System for Transformer-Based Generative Models* (OSDI 2022), which introduced continuous batching.
-- Agrawal et al., *Sarathi-Serve* (OSDI 2024), on chunked prefill and the throughput–latency tradeoff.
-- Zhong et al., *DistServe* (OSDI 2024), and Patel et al., *Splitwise* (ISCA 2024), on prefill/decode disaggregation, including on heterogeneous hardware.
-- The vLLM docs on CPU installation, benchmarking (`vllm bench serve`), and the metrics reference.
+Both nodes served `Qwen/Qwen2.5-1.5B-Instruct` in BF16 with vLLM 0.29.0 and a maximum sequence length of 4,096 tokens.
+
+```text
+                       OpenAI-compatible API
+                                │
+                         LiteLLM router
+                         /              \
+              qwen-fast /                \ qwen-batch
+                       /                  \
+        NVIDIA L4 GPU node          Intel CPU node
+        AWS g6.xlarge               AWS c7i.4xlarge
+        interactive chat            background RAG
+        vLLM + CUDA                 vLLM CPU + AMX
+```
+
+| Layer | Implementation | Why it is here |
+|---|---|---|
+| Model | Qwen2.5 1.5B Instruct, BF16 | Small enough to test cheaply on both GPU and CPU |
+| Inference engine | vLLM 0.29.0 | Provides continuous batching, PagedAttention, streaming, metrics, and an OpenAI-compatible API |
+| Fast pool | `g6.xlarge`, NVIDIA L4 24 GB | Serves latency-sensitive interactive chat |
+| Batch pool | `c7i.4xlarge`, Intel Sapphire Rapids | Serves slower, long-prompt background work |
+| Router | LiteLLM | Exposes one API and maps a model name to the correct backend |
+| Network | Private VPC traffic on port 8000 | Keeps backend traffic off the public internet |
+| Benchmark client | `vllm bench serve` and project scripts | Sends repeatable request shapes at controlled arrival rates |
+
+This is a small experiment, not a production deployment. A production version would place the router and load generators on separate compute, run multiple replicas across Availability Zones, add autoscaling and health-based routing, and persist observability data.
+
+## What we measured
+
+The project uses two request shapes because they stress the system differently.
+
+| Workload | Input | Output | What it represents | Main pressure |
+|---|---:|---:|---|---|
+| **Chat** | 256 tokens | 128 tokens | Interactive conversation | Fast first token and smooth streaming |
+| **RAG** | 2,048 tokens | 256 tokens | Document or retrieved-context question | Heavy prefill and larger KV cache |
+
+The service-level objective (SLO) was:
+
+- p99 time to first token (TTFT) ≤ 1 second
+- p99 inter-token latency (ITL) ≤ 100 milliseconds
+
+`p99` means 99% of requests were faster than that value; the slowest 1% were worse. An SLO uses tail latency because averages can look healthy while some users wait many seconds.
+
+### The metrics in plain language
+
+| Metric | What the user experiences | What usually makes it worse |
+|---|---|---|
+| **TTFT** | Delay before the first word appears | Queueing and long prompt processing |
+| **ITL** | Gap between streamed words or tokens | Large batches and other requests' prefills |
+| **Output tokens/s** | Total serving throughput across all users | Rises with batching until the server saturates |
+| **Capacity at SLO** | Highest sustained request rate that remains fast enough | The useful production capacity, also called goodput |
+| **$/1M output tokens** | Compute cost divided by delivered output | Falls with utilization, but only meaningful when latency still meets the SLO |
+
+## Experiment sequence
+
+Each experiment answers one question needed to understand the final architecture.
+
+| Experiment | Question | Comparison | Main finding |
+|---|---|---|---|
+| 1. Engine | Does vLLM help compared with plain Hugging Face generation? | HF `generate()` vs vLLM on the L4 | vLLM delivered 1.64–1.77× more output tokens/s across tested batches. |
+| 2. GPU load sweep | How much chat traffic can the L4 sustain? | Increasing open-loop request rates | Sustained capacity was 34 chat req/s at the SLO. |
+| 3. Long-prompt sweep | What happens when prompts grow from 256 to 2,048 tokens? | Chat vs RAG shape | RAG missed the strict ITL target even at the lowest tested GPU rate. |
+| 4. Scheduler tuning | Is capacity limited by KV memory or scheduling? | KV pool sizes and `max-num-seqs` | Halving the KV pool did not affect chat; limiting the scheduler to 16 sequences cut throughput 4.7×. |
+| 5. CPU sweep | Can the CPU serve the same model, and where does it fit? | CPU chat and RAG rates | It worked, but no tested row met both strict latency targets. |
+| 6. Router overhead | What does one routing hop cost? | Direct vLLM vs LiteLLM | About 17 ms additional p50 TTFT; no measurable throughput or median ITL loss. |
+| 7. Mixed workload | Does CPU offload protect chat from background RAG? | RAG on shared GPU vs RAG on CPU | Chat p99 TTFT improved from 24.7 s to 289 ms. |
+
+The chronological commands, instance details, deviations, and raw tables remain in [RUNLOG.md](RUNLOG.md). Raw benchmark JSON is in [`results/`](results/), logs are in [`logs/`](logs/), and the execution plan is in [PLAN.md](PLAN.md).
+
+## Results that matter
+
+### 1. vLLM improved engine throughput
+
+The engine comparison generated 128 new tokens per request with identical prompts and prefix caching disabled.
+
+| Batch size | Hugging Face | vLLM | vLLM speedup |
+|---:|---:|---:|---:|
+| 1 | 43.2 tok/s | 75.6 tok/s | 1.75× |
+| 8 | 333.0 tok/s | 588.0 tok/s | 1.77× |
+| 32 | 1,286.6 tok/s | 2,115.4 tok/s | 1.64× |
+
+What this means: serving software matters even when the model and hardware do not change. vLLM reduces execution overhead and schedules active requests continuously. This experiment did not show padding waste because every prompt was identical.
+
+### 2. Sustained GPU chat capacity was 34 requests/s
+
+The first short sweep suggested that the L4 could handle 56 req/s. That result was wrong for production planning: 300 requests at 56 req/s lasted only about five seconds, so a sustained queue did not have time to form.
+
+The corrected sweep sent 1,500 requests per rate:
+
+| Request rate | Output tok/s | p99 TTFT | p99 ITL | Meets SLO? |
+|---:|---:|---:|---:|:---:|
+| 24 req/s | 2,971 | 92 ms | 30.6 ms | Yes |
+| 28 req/s | 3,441 | 113 ms | 37.4 ms | Yes |
+| 32 req/s | 3,888 | 142 ms | 48.0 ms | Yes |
+| **34 req/s** | **4,098** | **173 ms** | **56.6 ms** | **Yes** |
+| 36 req/s | 4,148 | 1,533 ms | 70.5 ms | No |
+| 38 req/s | 4,167 | 3,666 ms | 72.9 ms | No |
+
+The saturation knee sits between 34 and 36 req/s. Throughput barely increased after that point, but p99 TTFT jumped from 173 ms to 1.5 seconds. New requests were waiting in a queue rather than creating useful capacity.
+
+At the tested on-demand price, the 34 req/s row delivered output for about **$0.055 per million output tokens**. That is an experiment-specific compute figure, not a complete production cost: it excludes the router, storage, networking, idle headroom, observability, and multi-AZ redundancy.
+
+### 3. Long prompts interfered with streaming
+
+On the GPU RAG sweep, p99 ITL was already 117 ms at 1 req/s, above the 100 ms target. At 4 req/s, p99 TTFT reached 27.5 seconds and throughput had flattened near 650 output tok/s.
+
+The reason is prefill interference. A 2,048-token prompt requires a large compute-heavy prefill. When that work shares scheduler steps with active chat decodes, every streaming request can pause. Chunked prefill reduces the pause but did not remove it under this test.
+
+This is why a server that looks fast for short chat prompts may behave very differently for RAG, code, or agent requests. Model name and tokens per second are not enough to describe capacity; prompt length and traffic mix are part of the workload.
+
+### 4. The chat workload was scheduler-limited, not KV-memory-limited
+
+Halving `--gpu-memory-utilization` reduced the KV pool from 575,440 to 272,832 tokens, but warm chat performance at 56 req/s was effectively unchanged. These short requests still fit comfortably.
+
+Setting `--max-num-seqs 16` had a large effect:
+
+| Configuration | Saturated output tok/s | p99 TTFT | p99 ITL |
+|---|---:|---:|---:|
+| Baseline | 5,011 | 5,452 ms | 82.4 ms |
+| 50% GPU memory utilization | 5,000 | 5,458 ms | 87.1 ms |
+| Maximum 16 sequences | 1,063 | 34,272 ms | 16.9 ms |
+| Maximum 256 sequences | 5,071 | 5,358 ms | 84.6 ms |
+
+The 16-sequence cap traded throughput for smoother token streaming. Only 16 requests shared each decode step, so ITL improved, but the waiting queue grew dramatically. This is a concrete example of why optimizing one latency metric can damage another.
+
+The tuning run also exposed a methodology problem: the first benchmark after restarting a server included model warm-up and produced p99 TTFT around 4.3 seconds, versus about 0.2 seconds after warm-up. All performance tests need an explicit warm-up and a sufficiently long measurement window.
+
+### 5. The CPU was a useful isolation tier, not a faster inference tier
+
+The Intel CPU node used seven physical Sapphire Rapids cores for model compute and left one core for the API server and benchmark client. Single-stream generation was about 15 tok/s after warm-up.
+
+No tested CPU row met both strict SLO thresholds. Chat throughput saturated near 367 output tok/s, compared with roughly 4,150 tok/s on the GPU—a 14× difference. Based on the short CPU sweep, chat cost about $0.78 per million tokens at the TTFT-only capacity, versus about $0.055 on the GPU sustained chat result.
+
+That does not make the CPU useless. It means the CPU is a poor replacement for the GPU when the goal is maximum interactive throughput. It can still be valuable for latency-tolerant work, spare already-paid-for capacity, or workload isolation.
+
+### 6. Offloading background RAG protected interactive chat
+
+This was the final experiment. Interactive chat ran at 24 req/s, about 70% of the measured sustained GPU capacity. Background RAG ran at 0.75 req/s.
+
+| Run | Where background RAG ran | Chat p99 TTFT | Chat p99 ITL | Chat output tok/s |
+|---|---|---:|---:|---:|
+| Chat alone | No background load | 91 ms | 30.2 ms | 2,971 |
+| A: shared | Same GPU as chat | **24,702 ms** | **203.7 ms** | 2,009 |
+| B: offloaded | CPU through LiteLLM | **289 ms** | **112.0 ms** | 2,942 |
+
+Moving RAG to the CPU changed chat p99 TTFT from 24.7 seconds to 289 ms—an 85× improvement—and restored throughput close to the chat-only result. p99 ITL improved from 204 ms to 112 ms.
+
+Run B was still worse than chat alone and narrowly missed the 100 ms ITL target. The GPU node had only four vCPUs and was also running the router and two benchmark clients, so CPU contention on that node probably contributed. This was not isolated, and each condition was run only once. The direction of the result is strong; the exact improvement needs repeated trials on a cleaner topology.
+
+The background job itself completed more slowly on the CPU: 186 seconds versus 164 seconds on the overloaded GPU. That was the intended trade. The batch user waited a little longer so interactive users did not wait tens of seconds.
+
+## What the experiment teaches about inference
+
+### Prefill and decode are different workloads
+
+An LLM request has two main phases:
+
+1. **Prefill** reads the entire prompt in parallel and creates the first token plus the initial KV cache. It is mostly compute-bound.
+2. **Decode** generates one token at a time and repeatedly reads model weights and prior KV state. It is often memory-bandwidth-bound.
+
+Long RAG prompts add prefill work. Many simultaneous chat streams add decode work. A production scheduler has to balance both without allowing one class to ruin the other's tail latency.
+
+### The KV cache controls concurrency
+
+Attention reuses keys and values from earlier tokens. vLLM stores them in a paged KV cache instead of recomputing them.
+
+For this model:
+
+```text
+KV bytes per token = 2 × layers × KV heads × head dimension × bytes per value
+                   = 2 × 28 × 2 × 128 × 2
+                   = 28,672 bytes, or about 28 KB per token
+```
+
+The GPU exposed a 575,440-token KV pool at 90% memory utilization, enough for about 140 maximum-length 4,096-token requests in theory. The tested chat requests were much shorter, which is why halving the pool did not change their capacity. Long-context requests would reach the memory limit sooner.
+
+### Batching improves throughput until queueing wins
+
+Continuous batching lets new requests join and completed requests leave at each decode step. This is why output throughput increased from 127 tok/s at 1 chat req/s to more than 4,000 tok/s near saturation.
+
+After the saturation knee, the server did not produce much more output. It only made new requests wait. Production capacity should therefore be measured at an SLO, not at the highest raw tokens/s observed during overload.
+
+## Translating this into an AWS inference service
+
+The experiment maps to a production design as follows:
+
+| Experiment component | Production AWS role | What to add for production |
+|---|---|---|
+| LiteLLM on one instance | Model gateway and workload router | Dedicated ECS/EKS service or instances, multiple replicas, health checks, authentication, rate limits |
+| L4 `g6.xlarge` | Interactive inference pool | Auto Scaling Group or EKS node group across AZs; scale on queue depth, TTFT, and running requests |
+| Sapphire Rapids `c7i.4xlarge` | Background or overflow pool | Queue-based workers, interruption-tolerant jobs, possibly Spot when retryable |
+| vLLM API | Model-serving container | ECR images pinned by version, readiness/startup probes, controlled rollouts |
+| Security-group-to-security-group rule | Private service-to-service traffic | Private subnets, load balancers or service discovery, least-privilege rules, VPC endpoints where useful |
+| Local benchmark scripts | Pre-production load test | Repeatable CI or release gate using production request distributions |
+| `/metrics` endpoint | Service telemetry | Amazon Managed Service for Prometheus, CloudWatch, Grafana, traces, SLO alerts |
+| Local model download | Weight distribution | S3 or model registry, local NVMe cache, controlled model release pipeline |
+
+A sensible routing policy would separate work by service objective rather than hardware name:
+
+- Interactive chat and user-facing agents go to the fast pool.
+- Batch summarization, evaluation, document processing, and other delay-tolerant jobs go to the background pool.
+- Very long or high-priority prompts can have their own queue or prefill pool.
+- The router rejects, queues, or sheds load when all pools are beyond their SLO capacity.
+
+The CPU tier is only one option. A production system might use a cheaper GPU pool, AWS Inferentia, Spot GPUs, or separate prefill and decode workers. The transferable lesson is to isolate workload classes whose performance goals and resource profiles conflict.
+
+## What is measured, calculated, and still uncertain
+
+| Type | Examples in this project | How to use it |
+|---|---|---|
+| **Measured** | TTFT, ITL, throughput, KV pool, engine comparison, router overhead | Evidence for this model, software version, instance type, and request shape |
+| **Calculated from measurements** | $/1M output tokens, 70% load point, speedup ratios | Useful if the inputs and pricing assumptions remain valid |
+| **Estimated** | Roofline ceilings and some theoretical bandwidth/compute explanations | Sanity checks, not capacity commitments |
+
+Important limits:
+
+- One small model and one precision were tested.
+- The final mixed-workload conditions were not repeated.
+- CPU sweep runs were short, so their reported capacities are upper bounds.
+- The router shared a four-vCPU GPU host with other processes.
+- Network traffic stayed inside one VPC and one AWS Region (`us-east-2`).
+- The experiment did not test autoscaling, multi-AZ failover, rolling deployment, or sustained observability.
+- AWS prices in the run log are the prices used during the experiment, not current quotes.
+
+Do not transfer a tokens/s number directly to another model or instance. Transfer the method: define the workload, warm the server, generate sustained open-loop traffic, find the saturation knee, and report the highest rate that still meets the user-facing SLO.
+
+## Reproduce or inspect the work
+
+| Path | What to read |
+|---|---|
+| [RUNLOG.md](RUNLOG.md) | Chronological record, complete result tables, AWS resources, and deviations |
+| [PLAN.md](PLAN.md) | Execution plan and validation gates |
+| [`scripts/`](scripts/) | Engine comparison, sweeps, tuning, router, and offload scripts |
+| [`results/`](results/) | Raw JSON measurements and saved analysis |
+| [`logs/`](logs/) | Server, benchmark, cache, and tuning logs |
+| [`analyze.py`](analyze.py) | Capacity-at-SLO and cost calculations |
+| [`docker-compose.yml`](docker-compose.yml) | Local Prometheus and Grafana stack |
+| [`app/`](app/) | Inference Atlas capacity planner |
+
+The full-stack source diagrams are also available as a [draw.io file](claude-inference-stack.drawio) and a [NotebookLM mind map](NotebookLM%20Mind%20Map.png).
+
+## Further reading
+
+- Kwon et al., *Efficient Memory Management for Large Language Model Serving with PagedAttention* (SOSP 2023)
+- Yu et al., *Orca: A Distributed Serving System for Transformer-Based Generative Models* (OSDI 2022)
+- Agrawal et al., *Sarathi-Serve* (OSDI 2024), on chunked prefill and latency/throughput tradeoffs
+- Zhong et al., *DistServe* (OSDI 2024), and Patel et al., *Splitwise* (ISCA 2024), on prefill/decode disaggregation
+- vLLM documentation for serving, benchmarking, CPU installation, and metrics
