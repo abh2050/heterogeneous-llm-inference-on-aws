@@ -177,3 +177,14 @@ def test_hf_token_never_appears_in_error_messages(client, monkeypatch):
     assert response.status_code >= 400
     assert SECRET not in response.text
     assert SECRET not in client.get("/api/bootstrap").text
+
+
+def test_guided_page_is_served_with_advanced_section_and_scripts(client):
+    html = client.get("/").text
+    assert "Find the cheapest hardware that runs your AI model fast enough for your users." in html
+    for anchor in ('id="step-model"', 'id="step-job"', 'id="step-people"', 'id="step-quality"', 'id="results"',
+                   'id="stack"', 'id="how"', 'id="glossary"', 'id="advanced"', "Start with an example"):
+        assert anchor in html
+    assert html.index('id="glossary"') < html.index('id="advanced"')  # advanced features stay at the bottom
+    for path in ("/static/guided.js", "/static/guided.css", "/static/app.js"):
+        assert client.get(path).status_code == 200

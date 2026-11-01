@@ -2,14 +2,67 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Evidence-aware inference capacity planning. Compare hardware, validate benchmarks, and export serving configurations.">
-  <title>Inference Atlas · Capacity planner</title>
+  <meta name="description" content="Find the cheapest hardware that runs your AI model fast enough for your users.">
+  <title>Inference Atlas · Hardware finder</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230d786b'/%3E%3Cpath d='M8 23V16h5v7zm0-10V8h5v5zm10 10V8h5v15z' fill='white'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="/static/guided.css">
   <script defer src="/static/vendor/plotly.min.js"></script>
   <script defer src="/static/app.js"></script>
+  <script defer src="/static/guided.js"></script>
 </head>
 <body>
+  <header class="g-hero">
+    <a class="g-brand" href="/" aria-label="Inference Atlas home"><span class="brand-mark"><i></i><i></i><i></i><i></i></span><span>Inference<span class="brand-second"> Atlas</span></span></a>
+    <h1>Find the cheapest hardware that runs your AI model fast enough for your users.</h1>
+    <p class="g-lead">Answer four short questions. The answer updates as you go.</p>
+    <button class="button primary" type="button" data-g="example">Start with an example</button>
+  </header>
+
+  <div class="g-page" id="guide">
+    <section class="g-step" id="step-model"><div class="g-eyebrow">STEP 1</div><h2>Pick a model</h2>
+      <p class="g-sub">The model is the AI you want to run. Search by name, or paste a Hugging Face link.</p>
+      <form id="g-model-form" class="g-model-form"><div class="model-combo"><input id="g-model" name="q" autocomplete="off" placeholder="Search models, e.g. Qwen3 or llama" aria-label="Model name, ID or link" role="combobox" aria-expanded="false" aria-controls="g-model-results"><ul id="g-model-results" class="combo-list" role="listbox" hidden></ul></div><button class="button primary" type="submit">Use this model</button></form>
+      <div id="g-model-card"></div>
+    </section>
+
+    <section class="g-step" id="step-job"><div class="g-eyebrow">STEP 2</div><h2>Pick the job</h2>
+      <p class="g-sub">The job decides how long the questions and answers are, and that changes the hardware you need.</p>
+      <div class="g-cards" id="g-jobs"></div>
+    </section>
+
+    <section class="g-step" id="step-people"><div class="g-eyebrow">STEP 3</div><h2>How many people?</h2>
+      <div class="g-sliders">
+        <label>Total users <output id="g-total-out"></output><input id="g-total" type="range" min="1" max="10000" step="1" value="100" aria-describedby="g-people-out"></label>
+        <label>Share active at the same time <output id="g-active-out"></output><input id="g-active" type="range" min="1" max="100" step="1" value="10"></label>
+      </div>
+      <p class="g-big" id="g-people-out" aria-live="polite"></p>
+    </section>
+
+    <section class="g-step" id="step-quality"><div class="g-eyebrow">STEP 4</div><h2>Quality versus size</h2>
+      <p class="g-sub">Smaller models fit on cheaper hardware but can lose a little accuracy.</p>
+      <div class="g-cards three" id="g-quality"></div>
+    </section>
+
+    <section class="g-step" id="results"><div class="g-eyebrow">YOUR RESULT</div><div id="g-results"><p class="g-sub">Loading…</p></div></section>
+
+    <section class="g-step" id="stack"><div class="g-eyebrow">YOUR STACK</div><h2>The software and hardware layers you would run</h2>
+      <p class="g-sub">Tap a layer to see what it does and why it was chosen.</p>
+      <div id="g-stack"></div>
+    </section>
+
+    <section class="g-step" id="how"><div class="g-eyebrow">HOW IT WORKS</div><h2>The idea in one picture</h2>
+      <p class="g-sub">Think of the model as a <b>storybook</b>, the GPU (the chip that does the math) as a <b>storyteller</b>, and the KV cache as the storyteller's <b>sticky notes</b>.</p>
+      <div class="g-explainers" id="g-explainers"></div>
+    </section>
+
+    <section class="g-step" id="glossary"><div class="g-eyebrow">GLOSSARY</div><h2>Every term in one sentence</h2><dl id="g-glossary"></dl></section>
+  </div>
+
+  <details class="g-advanced" id="advanced">
+    <summary><span><b>Advanced</b> · detailed roofline results, quick estimate, benchmarks, exact precision, assumptions, exports</span></summary>
+    <p class="g-adv-note">Everything from the original planner lives here. The guided steps above fill in the request shape, users, and precision; you can still edit every value.</p>
+    <div class="g-adv-shell">
   <aside class="sidebar">
     <a class="brand" href="/" aria-label="Inference Atlas home"><span class="brand-mark"><i></i><i></i><i></i><i></i></span><span>Inference<span class="brand-second">Atlas</span></span></a>
     <div class="workspace-label">CAPACITY WORKSPACE <span class="local-tag">LOCAL</span></div>
@@ -24,6 +77,8 @@
     <main id="main" tabindex="-1"><div class="loading-state"><div class="spinner"></div><h1>Opening your workspace</h1><p>Loading model assumptions and hardware profiles…</p></div></main>
     <footer><span>Inference Atlas <span class="muted">/</span> Capacity planning</span><span>Estimates guide testing. Measurements establish evidence.</span></footer>
   </div>
+    </div>
+  </details>
   <div id="toast" role="status" aria-live="polite"></div>
   <dialog id="save-dialog"><form id="save-form"><div class="eyebrow">WORKSPACE</div><h2>Save this scenario</h2><p>Keep the model, workload, hardware prices, assumptions, and selected configuration.</p><label>Scenario name<input name="name" required maxlength="100" placeholder="Production chat · October"></label><div class="dialog-actions"><button type="button" class="button" data-action="close-dialog">Cancel</button><button class="button primary" type="submit">Save scenario</button></div></form></dialog>
 </body>
