@@ -1,125 +1,212 @@
 # Inference Atlas
 
-A working browser application for inference capacity planning: a responsive HTML/CSS/JavaScript frontend, a Python/FastAPI backend, Plotly charts, Pydantic validation, and SQLite history. There is no Streamlit dependency and no model inference or replacement benchmark engine.
+**Find the cheapest hardware that runs your AI model fast enough for your users.**
 
-The original project contained only a heterogeneous-inference study guide. It is the root [README](../README.md) of this repository. No existing benchmark-service implementation, API contract, or sample response was present.
+Live: https://inference-atlas-one.vercel.app · API docs: `/api/docs`
 
-## Run
+Inference Atlas is a capacity planner for LLM serving. Pick a model, a job, and a number of users; it sizes memory,
+estimates speed and wait time, prices every hardware option in the catalog, and exports a `vllm serve` command.
+It is a FastAPI backend with a framework-free HTML/CSS/JavaScript frontend, Pydantic validation, and Plotly charts.
+It does not run models or benchmarks itself; measurements come from your own runs.
 
-Requires Python 3.11–3.14 and [uv](https://docs.astral.sh/uv/). Python 3.12 was used for validation.
+It sits next to the heterogeneous-inference study in this repository (see the root [README](../README.md)).
+
+| | |
+|---|---|
+| **Guided page** | Four plain-language steps, live results, a stack diagram, explainers, and a glossary |
+| **Advanced section** | Roofline model, quick estimate, benchmarks, exact precision, assumptions, catalog, exports |
+| **Honest labels** | Every number is tagged *measured*, *calculated*, or *estimated* with a one-line explanation |
+| **Runs two ways** | Local with SQLite, or stateless on Vercel with browser storage |
+
+## Quick start
+
+Requires Python 3.11–3.14 and [uv](https://docs.astral.sh/uv/) (3.12 was used for validation).
 
 ```sh
 uv sync --frozen
-uv run uvicorn app:app --host 127.0.0.1 --port 8765 --no-access-log
+./run.sh                      # http://127.0.0.1:8765
 ```
 
-Open **http://127.0.0.1:8765**. Alternatively run `./run.sh` from any directory. API documentation is at `/api/docs`. Port 8765 avoids the common inference-server port 8000; change the startup argument if necessary.
+`./run.sh` runs `uvicorn app:app` on port 8765 (override with `PLANNER_PORT`). Keep it bound to loopback: local mode
+is single-user and has no authentication boundary. Node and a frontend build are not needed.
 
-This is a local, single-user workspace. Keep it bound to loopback. It does not implement a multi-user authentication/authorization boundary. The frontend and vendored Plotly assets are served by the same Python process; Node and a frontend build are unnecessary.
+Click **Start with an example** to load Qwen3 30B A3B, Agents, 40 users, Balanced, on a DGX Spark. The catalog
+leaves DGX Spark's BF16 TFLOPS and price blank ("not published"), so the page asks you to enter them rather than
+guessing.
 
-## Guided page and Advanced section
+## The guided page
 
-The home page is a single scrolling, plain-language page: **1** pick a model (searchable Hugging Face dropdown,
-with popular models pinned), **2** pick a job (Chat, Document Q&A, Coding assistant, Agents), **3** set total
-users and the share active together, **4** choose quality versus size (BF16, FP8 default, INT4). Results update
-live: a verdict sentence, memory bar, speed gauge, wait before the first word, monthly cost and cost per million
-tokens next to an editable cloud API price, and a table of every option that fits (green, yellow or red). Below
-that are the software stack for your choices, short explainers, and a glossary. **Start with an example** loads
-Qwen3 30B A3B, Agents, 40 users, Balanced, on a DGX Spark.
+1. **Pick a model.** Search Hugging Face (text-generation, most downloaded, popular models pinned) or paste an ID or
+   URL. A card shows size, memory needed at each precision, and whether it is a mixture-of-experts model.
+2. **Pick the job.** Chat, Document Q&A (RAG), Coding assistant, or Agents. Each fills typical input, output, and
+   context lengths; every value stays editable in Advanced.
+3. **How many people.** Total users and the share active together (10% by default) give "about N people typing at
+   the same moment", which is mapped onto the concurrency sweep.
+4. **Quality versus size.** Best quality (BF16), Balanced (FP8, default), Smallest (INT4).
 
-Every number carries one label: **measured**, **calculated** or **estimated**, with an info icon. Everything from
-the original five-step workflow below is in the **Advanced** section at the bottom: roofline results (labeled
-*calculated, advanced*), the **Quick estimate (simplified)** panel (*calculated, simplified*), benchmark upload
-and paste, exact precision selectors (weights BF16/FP8/INT4, KV cache BF16/FP8), editable assumptions, the
-hardware catalog, and exports (the `vllm serve` command now includes `--quantization` and `--kv-cache-dtype`).
+Results update as you change anything: a one-sentence verdict, a memory bar (weights, KV cache, reserve, free), a
+speed gauge in tokens per second per person with a marker at 20, the wait before the first word, monthly cost and
+cost per million tokens beside an editable cloud API price, and a table of every option that fits (green meets both
+targets, yellow is close, red is under 10 tokens/s or over 5 s). Below are your stack (users, gateway, scheduler,
+serving engine, compute platform, hardware), short explainers that follow one analogy, and a glossary linked from
+every tooltip. It works on a phone.
 
-Other additions: mixture-of-experts sizing (memory uses total parameters, decode uses active parameters),
-`hardware_catalog.json` import with nulls shown as "not published", paste-in benchmark output with a short
-model/hardware/runtime form, and Vercel deployment (see [DEPLOY.md](DEPLOY.md)). The simplified quick-estimate
-formulas are in `planner/quick.py`. See [CHANGELOG.md](CHANGELOG.md) for each step.
+## Advanced
 
-## Five-step workflow (Advanced)
+Everything from the original planner lives in the **Advanced** section at the bottom of the page.
 
-1. **Model:** inspect a Hugging Face ID or URL and optional revision. Successful lookups pin a commit SHA, retrieve `config.json` plus available safetensors parameter metadata, and cache the result. Review normalized fields, per-field sources, compatibility notes, and explicit overrides. Local `config.json` inspection is available offline.
-2. **Workload and targets:** set mean/max lengths, optional length percentiles and distribution description, peak RPS, burst multiplier, additional headroom, prefix fraction/length/hit assumptions, p95 TTFT, an explicit TPOT percentile, operating hours, and pricing. Expand serving assumptions to edit efficiencies and reserves.
-3. **Compare configurations:** examine candidates ranked by full deployment hourly cost, select a configuration, inspect per-device memory, and compare TPOT with concurrency. Analytical lines are distinct from measured percentile points. An exploratory disaggregation calculator includes phase pools, KV transfer, a shared network budget, routing latency, and router cost.
-4. **Validate with benchmarks:** import normalized JSON or a vLLM result plus sidecar. Measurements retain launch/workload context and separate TTFT/TPOT/ITL/E2E metrics. An installed service adapter can advertise health, submission, polling, results, and cancellation. Active jobs poll every five seconds while the benchmark view is open; results are fetched explicitly.
-5. **Export configuration:** download a version-scoped vLLM command and JSON sizing report. Unresolved commits or unsupported configurations produce clearly labeled templates. Kubernetes export requires sufficient real cluster details; the app does not deploy anything.
+| Page | What it does |
+|---|---|
+| **Model** | Inspect a Hugging Face repo at a pinned commit, or a local `config.json`; per-field sources and explicit overrides |
+| **Workload & targets** | Token lengths, percentiles, request rate, burst, headroom, prefix caching, p95 TTFT, TPOT percentile, people, presets, exact weight/KV precision, efficiencies and reserves, hardware catalog and pricing |
+| **Compare configurations** | Candidates ranked by deployment cost, per-device memory, TPOT versus concurrency, a *Quick estimate (simplified)* panel, and an exploratory prefill/decode disaggregation calculator |
+| **Validate with benchmarks** | Import normalized JSON or a vLLM result, or paste `vllm bench serve` output (a short model/hardware/runtime form replaces the sidecar file) |
+| **Export** | Version-scoped `vllm serve` command (with `--quantization` and `--kv-cache-dtype`), JSON sizing report, Kubernetes manifest |
 
-The model, applied workload, and selected configuration remain visible while navigating. Save and reopen scenarios in the sidebar. Inputs apply on form submission.
+Save and reopen scenarios from the sidebar. Inputs apply on form submission.
 
-The initial Llama 3.1 8B example is **illustrative configuration data**, not a live lookup or a benchmark. It has no resolved SHA. There are **no preloaded measurements**. Inspect a live repository before exporting a complete command.
+### Two sets of calculations, labeled apart
 
-## Credentials
+- **Calculated, advanced:** the roofline model in `planner/sizing.py` (compute and bandwidth ceilings, TP
+  communication, queueing-free service times, replica counts). Existing outputs are unchanged.
+- **Calculated, simplified:** the plain formulas in `planner/quick.py`:
 
-Use a process environment variable named `HF_TOKEN` (locally, or a Vercel environment variable), or a local secret file selected by `PLANNER_SECRETS_FILE`. Enter credentials locally through your shell/secret manager; do not paste them into chat or source files.
+  ```text
+  Weights GB   = parameters (billions) × bytes per parameter
+  KV GB        = 2 × layers × KV heads × head_dim × KV bytes × context × users / 1e9
+  Fits         = (weights + KV) × 1.10 ≤ memory
+  Decode tok/s = bandwidth / bytes read per step × 0.7      (efficiency is editable)
+  $ / M tokens = hourly cost / (total tok/s × 3600) × 1,000,000
+  ```
 
-For example, in a local zsh session, `read -s 'HF_TOKEN?HF read token: '` prompts without echoing the value; then `export HF_TOKEN` before starting the server. Restart the server after changing its environment.
+  Llama 3.1 70B, BF16 weights and KV, 20 users, 32,768 context gives 140 GB of weights and about 215 GB of KV
+  cache (tested from `examples/llama31-70b.config.json`, no network).
+- **Measured:** imported benchmark results keep their own label and take precedence in matching contexts.
 
-Alternatively, create an ignored local `.local/secrets.toml` containing an `HF_TOKEN` setting and set `PLANNER_SECRETS_FILE` to that file's absolute path. Restrict its permissions to the current user. An environment `HF_TOKEN` takes precedence. The official Hub client can also use its normal locally saved login.
+No analytical output is a p95 measurement. Tail-latency compliance needs context-matched benchmarks.
 
-The server never sends a credential to the frontend or embeds it in exports. Imported nested authorization/credential fields and recognizable token strings are redacted before storage/export. Raw provider exceptions are suppressed. Benchmarks use their adapter's environment-based authentication, independent of HF credentials.
+## Model and runtime support
 
-A token does not grant access to a gated model: request approval on the repository page and use a token with approved read access. Missing access, invalid IDs/revisions, absent configuration, rate limits, and network failures produce actionable messages. Successful lookups are cached by model ID and requested revision as well as SHA; use **Refresh cached metadata** to re-resolve a moving branch.
-
-## Benchmark integration
-
-**Current status: unconfigured.** Direct service integration requires its base URL, authentication method, and actual API specification or sample result. The app does not invent endpoints or infer an authentication scheme.
-
-Use JSON import immediately. Download the normalized JSON schema from the benchmark view. A downloadable run-context sidecar captures the current configuration; fill in actual run metadata before importing. The example templates deliberately contain missing values and are not measurements.
-
-See [docs/benchmark-integration.md](docs/benchmark-integration.md) for the adapter contract, loadable factory, import formats, metric definitions, matching rules, and sidecar details.
-
-## Model/runtime support
-
-The conservative analytical path covers conventional dense decoder `LlamaForCausalLM`, `Qwen2ForCausalLM`, `Qwen3ForCausalLM`, and full-attention `MistralForCausalLM` configurations with sufficient metadata. Disabled sliding-window settings do not activate sliding-window behavior. MoE, active sliding-window attention, hybrid/state-space, multimodal, custom architectures, and alternative KV representations are explicitly unsupported by the basic estimator. Field overrides do not remove these warnings.
-
-Parameter counts prefer Hub safetensors metadata. When unavailable for a supported dense gated-MLP model, a tensor-shape formula is labeled **Derived estimate**. Counts are never inferred from the repository name. Quantization metadata is retained, but unknown storage and unverified kernels are not assigned plausible performance.
-
-The serving profile is intentionally scoped to **vLLM 0.10.2**, checked against its [versioned CLI](https://docs.vllm.ai/en/v0.10.2/cli/serve.html), [supported models](https://docs.vllm.ai/en/v0.10.2/models/supported_models.html), and [CPU documentation](https://docs.vllm.ai/en/v0.10.2/getting_started/installation/cpu.html). Other entered versions remain unsupported until a verified profile is added. vLLM itself is not installed by this planner; it belongs on the target serving hardware.
-
-Dense BF16/FP16 serving storage is modeled separately from repository dtype; vLLM's ordinary serving dtype couples dense weights and activations. Non-FP8 KV must follow that dtype. FP8 KV is opt-in for the cataloged H100/L4 profile, includes dynamic scale calculation, and requires target CUDA/kernel and model-quality validation. The planner does not claim FP8 accuracy is unchanged.
+- **Dense and mixture-of-experts decoders.** `LlamaForCausalLM`, `Qwen2`, `Qwen3`, `Qwen3Moe`, and full-attention
+  `Mistral` configs with enough metadata. For MoE models, memory uses **total** parameters and decode bandwidth
+  uses **active** parameters per token (expert counts and sizes are read from `config.json`). Tested with
+  Qwen/Qwen3-30B-A3B.
+- **Unsupported, and flagged:** active sliding-window attention, hybrid/state-space, multimodal, custom
+  architectures, and alternative KV layouts. Field overrides do not remove these warnings.
+- **Parameter counts** prefer Hub safetensors metadata. Otherwise a tensor-shape formula is labeled *Derived
+  estimate*. Counts are never inferred from a model name.
+- **Precision.** Weights BF16, FP8 (1 byte), or INT4 (0.5 byte); KV cache BF16 or FP8. FP8 weights export as
+  `--quantization fp8`. INT4 sizes correctly but exports as a template unless the model ID is a pre-quantized AWQ
+  checkpoint, because vLLM cannot quantize BF16 weights to INT4 at load time. Pre-quantized AWQ, GPTQ, FP8 and
+  compressed-tensors checkpoints are recognized. FP8 KV is verified only for the cataloged CUDA profiles and needs
+  quality validation on your hardware.
+- **Runtime profile** is scoped to **vLLM 0.10.2**, checked against its
+  [CLI](https://docs.vllm.ai/en/v0.10.2/cli/serve.html),
+  [supported models](https://docs.vllm.ai/en/v0.10.2/models/supported_models.html), and
+  [CPU docs](https://docs.vllm.ai/en/v0.10.2/getting_started/installation/cpu.html). Other versions stay
+  unsupported until a verified profile is added. vLLM is not installed by this app.
 
 ## Hardware catalog and cost
 
-[planner/data/hardware.v1.json](planner/data/hardware.v1.json) is versioned and contains per-field units, vendor source URLs, topology assumptions, notes, and price provenance. It includes H100 SXM 80 GB, A100 SXM 80 GB, L4 24 GB, and a c7i.4xlarge CPU profile. GPU compute uses **dense** BF16 ceilings, without a sparsity multiplier. CPU bandwidth/compute are study-guide assumptions, not measurements.
+`hardware_catalog.json` (validated by [`planner/data/hardware_catalog.schema.json`](planner/data/hardware_catalog.schema.json))
+lists 24 systems across NVIDIA, AMD, and Intel, plus Apple, with memory, bandwidth, BF16/FP8/FP4 TFLOPS,
+interconnect, power, price, compute platform, serving engines, and a per-value source link. It is converted into the
+planner's `Hardware` format by `planner/hardware_catalog.py`.
 
-**All default prices are illustrative.** H100/A100 rates are budget placeholders. L4/CPU rates were transcribed from the existing guide, not verified as current cloud quotes. The catalog date records when these assumptions were assembled. Edit price, provider, region and date in Workload → Hardware pricing; changed rows are labeled Supplied. Include all allocated host, network, storage and router costs in the supplied unit price. No live provider-pricing API is used.
+- **Nulls stay null.** Unpublished values show as "not published", and each published value has its source in a
+  tooltip. An entry joins the comparison only once memory, bandwidth, BF16 TFLOPS, and a price are all present.
+  Fill gaps under Advanced → Workload → Hardware catalog. An editable "My local lab machine" entry starts blank.
+- **Multi-GPU systems** are divided into per-device entries; one-way link bandwidth is half the catalog's aggregate
+  figure.
+- **Prices.** Where there is no cloud hourly price, cost is the list price amortized over 3 years of continuous
+  use (labeled *estimated*; it excludes host, power, and hosting). All prices are illustrative, not quotes. Include
+  every allocated cost in the unit price you supply.
+- **Prefill speed** is estimated as `bf16_tflops_dense × 1e12 × 0.4 / (2 × active parameters)`, labeled
+  *estimated*, and editable.
+- **Built-ins kept.** The original A100 SXM 80 GB and c7i.4xlarge CPU entries (in
+  [`planner/data/hardware.v1.json`](planner/data/hardware.v1.json)) stay because the catalog lacks them; the H100
+  and L4 come from the catalog.
 
-Memory calculations use bytes; charts show GiB. Decimal GB = 10^9 bytes, GiB = 2^30 bytes. Catalog GPU capacities are decimal GB.
+Memory is computed in bytes and charted in GiB. Decimal GB = 10^9 bytes; catalog capacities are decimal GB. See
+[docs/methodology.md](docs/methodology.md) for formulas, assumptions, and disaggregation limits.
 
-See [docs/methodology.md](docs/methodology.md) for formulas, assumptions, disaggregation limits, and the recomputed Llama/H100 sanity check.
+## Hugging Face token
 
-## Validation
+Set `HF_TOKEN` as a **server environment variable**: a local shell export, a Vercel environment variable, or a
+local secret file selected by `PLANNER_SECRETS_FILE` (an `HF_TOKEN` setting in an ignored `.local/secrets.toml`;
+the environment variable wins).
 
 ```sh
-uv run pytest -q
-uv run ruff check app.py planner tests
-node --check < web/app.js  # optional JavaScript syntax check
+read -s 'HF_TOKEN?HF read token: '   # zsh: prompts without echoing
+export HF_TOKEN && ./run.sh
 ```
 
-Tests cover units/KV geometry, block rounding, precision, exhaustion, context and TP compatibility, CPU allocation, prefix assumptions, Little's law, replica/cost denominators, special/missing metadata, immutable sanitized imports, metric definitions, calibration context and extrapolation, service-adapter lifecycle, API workflows, and export prerequisites.
+The token is never sent to the browser, logged, exported, or included in error messages (the page only learns
+whether one is configured; tests assert this). Imported credentials and recognizable token strings are redacted
+before storage. A token does not grant access to a gated model such as Llama: your account must also be approved on
+the model's page. Lookups are cached by model ID, revision, and SHA; use **Refresh cached metadata** to re-resolve a
+moving branch.
 
-Browser checks exercised live Qwen metadata retrieval, workload recalculation, scenario persistence, comparison/charts, unconfigured benchmark behavior, and versioned exports. The public Hub smoke lookup resolved `Qwen/Qwen2.5-1.5B-Instruct` to `989aa7980e4cf806f80c7fef2b1adb7bc71aa306` with 1,543,714,304 parameters from repository tensor metadata.
+## Benchmarks
 
-[docs/validation.md](docs/validation.md) records the verification scope. No GPU/CPU serving benchmark or cluster deployment was performed. Initial efficiencies and all analytical latency/capacity figures remain estimates. Tail SLO compliance requires context-matched representative measurements. Calibration residuals are not statistical confidence intervals.
+Measurements enter three ways, and none are preloaded:
 
-## Project layout
+- **Paste** `vllm bench serve` output or its `--save-result` JSON in Advanced → Validate. If it does not say what was
+  benchmarked, a short form asks for model, hardware, and runtime.
+- **Import** normalized JSON, or a vLLM result plus a context sidecar (download the sidecar template and schema from
+  the same page).
+- **Adapter** (local mode only): an installed service adapter can advertise health, submit, poll, results, and
+  cancel. It is unconfigured by default; the app does not invent endpoints or infer an authentication scheme.
+
+Measurements keep their launch and workload context and separate TTFT, TPOT, ITL, and E2E. Matching runs take
+precedence over heuristics. See [docs/benchmark-integration.md](docs/benchmark-integration.md) for the adapter
+contract, formats, metric definitions, and matching rules.
+
+## Deploying to Vercel
+
+The same app runs on Vercel's Python runtime. Set `STORAGE_MODE=vercel` (or deploy on Vercel, which is detected
+automatically): the server becomes stateless, and scenarios, benchmarks, and hardware edits live in the browser's
+IndexedDB with **Export my data** and **Import data** buttons. The external benchmark adapter is disabled, and the
+only server-side file is a disposable metadata cache under `/tmp`. The local path is unchanged. Full steps for the
+CLI and dashboard are in [DEPLOY.md](DEPLOY.md).
+
+## Development
+
+```sh
+uv run pytest -q          # 114 tests: sizing, MoE, precision, catalog, quick estimate, paste, token, both storage modes
+uv run ruff check .
+```
+
+Tests cover KV geometry and block rounding, precision, context and TP compatibility, CPU allocation, prefix
+assumptions, Little's law, replica and cost denominators, catalog conversion, the quick-estimate formulas,
+benchmark parsing and calibration, token handling, exports, and Vercel-mode behavior. Browser behavior was checked in
+headless Chrome (guided page rendering, IndexedDB persistence across reload). See
+[docs/validation.md](docs/validation.md) for the verification scope. No GPU or CPU serving benchmark or cluster
+deployment was run for this app, so analytical latency and capacity figures remain estimates.
+
+### Project layout
 
 ```text
-app.py                     FastAPI endpoints and local asset serving
-web/                       Browser UI, CSS, vendored Plotly, JSON schema
-planner/models.py          Typed units/context/validation records
-planner/hf_metadata.py     Official Hub client and architecture normalization
-planner/catalog.py         Hardware catalog loader
-planner/sizing.py          Pure memory, roofline, replica, cost and pool calculations
-planner/benchmark.py       Service adapter interface and result import
-planner/calibration.py     Context matching and empirical corrections
-planner/storage.py         SQLite metadata/scenario/benchmark/job persistence
-planner/exports.py         Version-scoped vLLM and Kubernetes exports
-planner/charts.py          Evidence-aware Plotly figures
-examples/                  Illustrative config and incomplete import templates
-tests/                     Calculation and integration boundaries
+app.py                      FastAPI endpoints; serves web/ locally
+vercel.json                 Static web/ plus /static mapping (root app.py is the Vercel function)
+hardware_catalog.json       Hardware catalog (validated, converted at startup)
+web/                        index.html, guided.js/css, app.js (Advanced), storage.js, vendored Plotly
+planner/models.py           Typed records: model, workload, assumptions, hardware, benchmarks
+planner/sizing.py           Roofline memory, speed, replica, cost, and pool calculations
+planner/quick.py            Quick estimate (simplified) formulas
+planner/presets.py          Chat, RAG, coding, agents workload presets
+planner/hardware_catalog.py Catalog schema, conversion, prefill estimate
+planner/hf_metadata.py      Hub client, architecture normalization (dense and MoE), model search
+planner/paste.py            vllm bench serve text/JSON parsing and short context form
+planner/benchmark.py        Service adapter interface and result import
+planner/calibration.py      Context matching and empirical corrections
+planner/exports.py          Version-scoped vLLM and Kubernetes exports
+planner/storage.py          SQLite metadata, scenarios, benchmarks, jobs (local mode)
+planner/mode.py             local vs vercel storage mode
+planner/security.py         Redaction and identifier protections
+examples/                   Example configs (Llama 8B and 70B) and import templates
+tests/                      Calculation and integration tests
 ```
 
-Default data path: `.local/planner.sqlite3` (ignored by Git). Set `PLANNER_DB` to change it. Credentials are not stored there. Back up SQLite with a consistent SQLite backup/snapshot if retaining history across installations.
+Local data lives in `.local/planner.sqlite3` (ignored by Git; override with `PLANNER_DB`). Credentials are not
+stored there. See [CHANGELOG.md](CHANGELOG.md) for what each build step added.
