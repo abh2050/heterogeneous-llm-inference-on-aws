@@ -11,7 +11,7 @@
   <a class="skip" href="#main">Skip to content</a>
   <header class="topbar">
     <a class="brand" href="#top" aria-label="Inference Stack Atlas home"><span class="brand-mark">IS</span><span>Inference Stack Atlas</span></a>
-    <nav aria-label="Primary"><a href="#journey">Request journey</a><a href="#compare">Compare</a><a href="#concepts">Concepts</a></nav>
+    <nav aria-label="Primary"><a href="#journey">Request journey</a><a href="#compare">Compare</a><a href="#builder">Build a stack</a></nav>
     <button class="theme" id="themeToggle" type="button" aria-label="Toggle color theme">◐</button>
   </header>
 
@@ -56,8 +56,20 @@
       </div>
     </section>
 
+    <section class="section builder" id="builder">
+      <div class="section-head"><div><div class="kicker">04 · System designer</div><h2>Build the stack in order.</h2></div><p>Start with the service you need to deliver. The designer turns that intent into connected architecture decisions—from entrance to operations.</p></div>
+      <div class="builder-shell">
+        <div class="builder-progress"><div class="progress-meta"><span id="builderStep">Step 1 of 10</span><span id="builderPercent">10%</span></div><div class="progress-track"><i id="progressBar"></i></div><div class="step-dots" id="stepDots"></div></div>
+        <div class="builder-body">
+          <div class="builder-question" id="builderQuestion"></div>
+          <aside class="architecture-preview"><div class="preview-head"><span>Live architecture</span><strong id="architectureName">Untitled service</strong></div><div class="architecture-chain" id="architectureChain"></div></aside>
+        </div>
+        <div class="builder-nav"><button id="builderBack" class="button secondary" type="button">← Back</button><button id="builderNext" class="button primary" type="button" disabled>Continue →</button></div>
+      </div>
+    </section>
+
     <section class="section source-material">
-      <div class="section-head"><div><div class="kicker">04 · Source material</div><h2>From map to explainer.</h2></div><p>The original diagrams remain part of the repository and are linked here for deeper inspection.</p></div>
+      <div class="section-head"><div><div class="kicker">05 · Source material</div><h2>From map to explainer.</h2></div><p>The original diagrams remain part of the repository and are linked here for deeper inspection.</p></div>
       <div class="source-grid">
         <a class="source-card mindmap" href="assets/notebooklm-mind-map.png" target="_blank"><div class="source-preview"></div><div><span>Concept map · PNG</span><h3>AI Inference Engineering</h3><p>Fundamentals, metrics, optimization, serving infrastructure, cost, and alternative architectures.</p></div></a>
         <a class="source-card blueprint" href="assets/claude-inference-stack.drawio" download><div class="blueprint-lines" aria-hidden="true"></div><div><span>Architecture source · draw.io</span><h3>Full Stack Map</h3><p>Nineteen layers across access, control, compute software, hardware, and infrastructure.</p></div></a>

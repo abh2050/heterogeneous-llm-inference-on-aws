@@ -1,6 +1,6 @@
 # Inference Stack Atlas
 
-Static GitHub Pages explainer for the Intel, NVIDIA, and AMD production LLM inference stacks.
+Static GitHub Pages explainer for the Intel, NVIDIA, and AMD production LLM inference stacks. It includes a guided, dependency-ordered system designer that recommends components and exports the completed architecture as Markdown.
 
 ## Preview locally
 
