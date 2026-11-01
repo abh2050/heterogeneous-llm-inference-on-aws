@@ -13,7 +13,7 @@ from pydantic import Field, model_validator
 
 from planner.models import Assumptions, Candidate, Hardware, ModelSpec, Record, Workload
 from planner.security import scrub
-from planner.sizing import GIB, compatibility
+from planner.sizing import GIB, compatibility, quantization_flag
 
 VLLM_VERSION = "0.10.2"
 CLI_SOURCE = "https://docs.vllm.ai/en/v0.10.2/cli/serve.html"
@@ -41,8 +41,9 @@ def vllm_command(model: ModelSpec, h: Hardware, c: Candidate, w: Workload, a: As
         missing.append(
             "vLLM auto KV dtype follows serving dtype; requested mixed non-FP8 KV precision is not representable"
         )
-    if not model.quantization and a.weight_bytes != (4 if a.activation_dtype == "float32" else 2):
-        missing.append("Dense weight bytes must match vLLM serving dtype")
+    if not model.quantization and a.weight_precision == "bf16":
+        if a.weight_bytes != (4 if a.activation_dtype == "float32" else 2):
+            missing.append("Dense weight bytes must match vLLM serving dtype")
     if not a.chunked_prefill and a.batched_tokens < w.input_max + w.output_max:
         missing.append("Without chunked prefill, batched-token budget must cover max model length")
     argv = [
@@ -72,6 +73,9 @@ def vllm_command(model: ModelSpec, h: Hardware, c: Candidate, w: Workload, a: As
         "--port",
         "8000",
     ]
+    quant = quantization_flag(model, a)
+    if quant:
+        argv[argv.index("--dtype") : argv.index("--dtype")] = ["--quantization", quant]
     env = {}
     notes = [
         f"Requires a preinstalled vLLM {VLLM_VERSION} build for the selected hardware.",
@@ -93,6 +97,13 @@ def vllm_command(model: ModelSpec, h: Hardware, c: Candidate, w: Workload, a: As
         rounded = math.ceil(c.memory.get("kv", 0) / GIB) * GIB
         if c.memory.get("total", 0) - c.memory.get("kv", 0) + rounded > c.memory.get("budget", 0):
             missing.append("Rounded CPU KV-cache allocation exceeds memory budget")
+    if quant == "fp8" and not model.quantization:
+        notes.append("--quantization fp8 quantizes BF16 weights at load time; validate output quality.")
+    if a.weight_precision == "int4" and not model.quantization:
+        missing.append(
+            "INT4 needs a pre-quantized AWQ checkpoint: enter an AWQ model ID and fetch its metadata "
+            "(vLLM cannot quantize BF16 weights to INT4 at load time)"
+        )
     if a.kv_dtype == "fp8_e4m3":
         argv += ["--calculate-kv-scales"]
         notes.append(

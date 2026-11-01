@@ -15,7 +15,7 @@ from planner.models import (
     ModelSpec,
     Workload,
 )
-from planner.sizing import estimate, price_candidate
+from planner.sizing import estimate, price_candidate, weight_dtype_label
 
 
 WORKLOAD_KEYS = (
@@ -52,7 +52,7 @@ def context_matches(
         and cfg.engine == a.engine
         and cfg.engine_version == a.engine_version
         and cfg.tp == candidate.tp
-        and cfg.weight_dtype == (a.activation_dtype if not model.quantization else model.weight_dtype)
+        and cfg.weight_dtype == weight_dtype_label(model, a)
         and cfg.weight_bytes == (model.effective_weight_bytes or a.weight_bytes)
         and cfg.quantization == model.quantization
         and cfg.activation_dtype == a.activation_dtype

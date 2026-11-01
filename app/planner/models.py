@@ -131,8 +131,14 @@ class Workload(Record):
         return None
 
 
+# Bytes per parameter implied by each weight precision: the number in the name divided by 8.
+WEIGHT_PRECISION_BYTES = {"fp8": 1.0, "int4": 0.5}
+
+
 class Assumptions(Record):
     activation_dtype: Literal["bfloat16", "float16", "float32"] = "bfloat16"
+    # bf16 keeps the long-standing behavior (weight_bytes as supplied); fp8/int4 imply 1 / 0.5 bytes.
+    weight_precision: Literal["bf16", "fp8", "int4"] = "bf16"
     weight_bytes: float = Field(default=2, gt=0, le=8)
     weight_overhead: float = Field(default=0.03, ge=0, le=1)
     kv_dtype: Literal["bfloat16", "float16", "fp8_e4m3"] = "bfloat16"
@@ -156,8 +162,19 @@ class Assumptions(Record):
     prefix_caching: bool = False
     chunked_prefill: bool = True
 
+    @model_validator(mode="before")
+    @classmethod
+    def implied_weight_bytes(cls, data):
+        if isinstance(data, dict) and data.get("weight_precision") in WEIGHT_PRECISION_BYTES:
+            data = {**data}
+            data.setdefault("weight_bytes", WEIGHT_PRECISION_BYTES[data["weight_precision"]])
+        return data
+
     @model_validator(mode="after")
     def precision(self):
+        implied = WEIGHT_PRECISION_BYTES.get(self.weight_precision)
+        if implied is not None and self.weight_bytes != implied:
+            raise ValueError(f"Weight bytes must be {implied} for {self.weight_precision} weights")
         expected = 1 if self.kv_dtype == "fp8_e4m3" else 2
         if self.kv_bytes != expected:
             raise ValueError("KV element bytes must match the selected KV dtype")

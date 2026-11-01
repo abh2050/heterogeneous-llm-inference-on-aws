@@ -85,3 +85,59 @@ def test_kubernetes_blocked_without_prerequisites(model, hardware, workload, ass
     for invalid in [dict(deployment_confirmed=False), dict(memory_gib=1), dict(image="vllm:latest")]:
         with pytest.raises(ValueError):
             kubernetes_yaml(model, hardware, c, workload, assumptions, details(**invalid))
+
+
+def test_fp8_weights_and_fp8_kv_add_quantization_and_kv_flags(model, hardware, workload):
+    from planner.models import Assumptions
+
+    a = Assumptions(weight_precision="fp8", kv_dtype="fp8_e4m3", kv_bytes=1)
+    assert a.weight_bytes == 1
+    c = estimate(model, hardware, workload, a, 1, 8)
+    assert c.feasible
+    ex = vllm_command(model, hardware, c, workload, a)
+    assert ex.runnable
+    assert ex.argv[ex.argv.index("--quantization") + 1] == "fp8"
+    assert ex.argv[ex.argv.index("--kv-cache-dtype") + 1] == "fp8_e4m3"
+    # Halving weight bytes frees memory compared with the BF16 default.
+    bf16 = estimate(model, hardware, workload, Assumptions(), 1, 8)
+    assert c.memory["weights"] == pytest.approx(bf16.memory["weights"] / 2)
+
+
+def test_bf16_command_has_no_quantization_flag_and_auto_kv(model, hardware, workload, assumptions):
+    c = estimate(model, hardware, workload, assumptions, 1, 8)
+    ex = vllm_command(model, hardware, c, workload, assumptions)
+    assert "--quantization" not in ex.argv
+    assert ex.argv[ex.argv.index("--kv-cache-dtype") + 1] == "auto"
+
+
+def test_int4_is_sized_but_template_until_checkpoint_is_prequantized(model, hardware, workload):
+    from planner.models import Assumptions
+
+    a = Assumptions(weight_precision="int4")
+    c = estimate(model, hardware, workload, a, 1, 8)
+    assert c.feasible and a.weight_bytes == 0.5
+    ex = vllm_command(model, hardware, c, workload, a)
+    assert not ex.runnable and "--quantization awq" in ex.command
+    assert any("pre-quantized AWQ" in m for m in ex.missing)
+    # A real AWQ checkpoint (known storage bytes) exports as runnable with the matching flag.
+    awq = model.model_copy(
+        update={
+            "quantization": {"quant_method": "awq", "bits": 4},
+            "effective_weight_bytes": 0.55,
+            "weight_dtype": "int4",
+        }
+    )
+    c = estimate(awq, hardware, workload, Assumptions(), 1, 8)
+    ex = vllm_command(awq, hardware, c, workload, Assumptions())
+    assert ex.runnable and ex.argv[ex.argv.index("--quantization") + 1] == "awq"
+
+
+def test_weight_precision_must_match_bytes_and_cpu_is_rejected(model, workload):
+    from pydantic import ValidationError
+
+    from planner.models import Assumptions
+
+    with pytest.raises(ValidationError):
+        Assumptions(weight_precision="fp8", weight_bytes=2)
+    cpu = next(h for h in load_catalog() if h.kind == "CPU")
+    assert not estimate(model, cpu, workload, Assumptions(weight_precision="fp8"), 1, 1).feasible

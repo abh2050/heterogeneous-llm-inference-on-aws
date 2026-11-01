@@ -24,6 +24,7 @@ from planner.models import (
     Workload,
 )
 from planner.security import scrub
+from planner.sizing import weight_dtype_label
 
 
 class Capabilities(Record):
@@ -103,7 +104,7 @@ def build_run_context(
         topology=h.topology,
         engine=a.engine,
         engine_version=a.engine_version,
-        weight_dtype=a.activation_dtype if not model.quantization else model.weight_dtype,
+        weight_dtype=weight_dtype_label(model, a),
         launch_config={
             "argv": vllm_command(model, h, candidate, w, a).argv,
             "environment": vllm_command(model, h, candidate, w, a).environment,

@@ -15,6 +15,28 @@ GIB = 2**30
 GB = 10**9
 
 
+# quant_method (config.json) -> vllm serve --quantization value; None means vLLM auto-detects it.
+VLLM_QUANTIZATION_FLAGS = {"awq": "awq", "gptq": "gptq", "fp8": "fp8", "compressed-tensors": None}
+
+
+def quantization_method(model: ModelSpec) -> str | None:
+    method = model.quantization.get("quant_method") if model.quantization else None
+    return str(method).lower() if method else None
+
+
+def quantization_flag(model: ModelSpec, a: Assumptions) -> str | None:
+    """Value for vllm serve --quantization, or None when the flag is omitted."""
+    if model.quantization:
+        return VLLM_QUANTIZATION_FLAGS.get(quantization_method(model) or "")
+    return {"fp8": "fp8", "int4": "awq"}.get(a.weight_precision)
+
+
+def weight_dtype_label(model: ModelSpec, a: Assumptions) -> str:
+    if model.quantization:
+        return model.weight_dtype
+    return {"fp8": "fp8", "int4": "int4"}.get(a.weight_precision, a.activation_dtype)
+
+
 def kv_bytes_per_token(model: ModelSpec, kv_element_bytes: float) -> float:
     if any(getattr(model, key) is None for key in ("layers", "kv_heads", "head_dim")):
         raise ValueError("KV sizing needs layers, KV heads and head dimension")
@@ -47,8 +69,11 @@ def compatibility(model: ModelSpec, hardware: Hardware, a: Assumptions, tp: int,
         reasons.append("Maximum input + output exceeds the model context limit")
     if a.kv_dtype != "fp8_e4m3" and a.kv_dtype != a.activation_dtype:
         reasons.append("Non-FP8 KV dtype must match the vLLM serving dtype")
-    if not model.quantization and a.weight_bytes != (4 if a.activation_dtype == "float32" else 2):
-        reasons.append("Dense weight bytes must match the serving weight/activation dtype")
+    if not model.quantization and a.weight_precision == "bf16":
+        if a.weight_bytes != (4 if a.activation_dtype == "float32" else 2):
+            reasons.append("Dense weight bytes must match the serving weight/activation dtype")
+    if not model.quantization and a.weight_precision != "bf16" and hardware.kind != "GPU":
+        reasons.append("FP8 and INT4 weights are only in the verified GPU profiles")
     if not a.chunked_prefill and a.batched_tokens < w.input_max + w.output_max:
         reasons.append("Without chunked prefill, batched-token budget must cover max model length")
     if a.kv_dtype == "fp8_e4m3" and (not hardware.fp8_kv or a.engine_version != "0.10.2"):
@@ -61,7 +86,7 @@ def compatibility(model: ModelSpec, hardware: Hardware, a: Assumptions, tp: int,
         reasons.append(
             "Quantized weight storage is unknown: override effective bytes/parameter including format packing assumptions"
         )
-    if model.quantization:
+    if model.quantization and quantization_method(model) not in VLLM_QUANTIZATION_FLAGS:
         reasons.append(
             "Quantized kernel/format is not in the verified runtime profiles; memory inspection only"
         )
