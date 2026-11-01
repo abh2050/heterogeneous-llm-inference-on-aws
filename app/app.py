@@ -26,6 +26,7 @@ from planner.hf_metadata import (
     search_models,
 )
 from planner.models import Assumptions, Candidate, ModelSpec, Workload
+from planner.paste import classify, context_defaults, short_context
 from planner.presets import presets
 from planner.quick import ADVANCED, DECODE_EFFICIENCY, SIMPLIFIED, quick_table
 from planner.security import scrub
@@ -239,6 +240,22 @@ def import_results(payload: dict):
     db = store()
     db.add_benchmarks(records)
     return {"imported": len(records), "run_ids": [r.run_id for r in records]}
+
+
+@app.post("/api/benchmarks/paste")
+def paste_results(payload: dict):
+    kind, data = classify(payload.get("text") or "")
+    db = store()
+    if kind == "normalized":
+        records = import_normalized(data)
+    else:
+        plan = PlanningRequest.model_validate(payload["plan"])
+        form = payload.get("context")
+        if not form:
+            return {"needs_context": True, "defaults": context_defaults(plan, data)}
+        records = [import_vllm_result(data, short_context(plan, form))]
+    db.add_benchmarks(records)
+    return {"imported": len(records), "run_ids": [r.run_id for r in records], "needs_context": False}
 
 
 def candidate_from(payload: dict):
