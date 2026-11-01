@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Evidence-aware inference capacity planning. Compare hardware, validate benchmarks, and export serving configurations.">
+  <title>Inference Atlas · Capacity planner</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230d786b'/%3E%3Cpath d='M8 23V16h5v7zm0-10V8h5v5zm10 10V8h5v15z' fill='white'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/static/styles.css">
+  <script defer src="/static/vendor/plotly.min.js"></script>
+  <script defer src="/static/app.js"></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="/" aria-label="Inference Atlas home"><span class="brand-mark"><i></i><i></i><i></i><i></i></span><span>Inference<span class="brand-second">Atlas</span></span></a>
+    <div class="workspace-label">CAPACITY WORKSPACE <span class="local-tag">LOCAL</span></div>
+    <nav id="navigation" aria-label="Planning steps"></nav>
+    <div class="sidebar-section"><div class="sidebar-label">SAVED SCENARIOS <button class="icon-button" data-action="save-scenario" title="Save current scenario" aria-label="Save current scenario">+</button></div><div id="scenarios"></div></div>
+    <div class="sidebar-bottom"><div class="status-dot"></div><div><strong id="adapter-label">JSON import available</strong><small>Benchmark connection</small></div><button class="icon-button" data-action="navigate" data-page="3" aria-label="Open benchmark connection">↗</button></div>
+    <div class="sidebar-foot">Built for decisions. Grounded in evidence.</div>
+  </aside>
+  <div class="workspace">
+    <header class="topbar"><div><span class="crumb">Workspace</span><span class="slash">/</span><span id="breadcrumb">Model inspection</span></div><div class="topbar-right"><span class="version-label">ESTIMATOR v0.1</span><button class="button small" data-action="save-scenario">Save scenario</button></div></header>
+    <div id="context-bar" class="context-bar"></div>
+    <main id="main" tabindex="-1"><div class="loading-state"><div class="spinner"></div><h1>Opening your workspace</h1><p>Loading model assumptions and hardware profiles…</p></div></main>
+    <footer><span>Inference Atlas <span class="muted">/</span> Capacity planning</span><span>Estimates guide testing. Measurements establish evidence.</span></footer>
+  </div>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <dialog id="save-dialog"><form id="save-form"><div class="eyebrow">WORKSPACE</div><h2>Save this scenario</h2><p>Keep the model, workload, hardware prices, assumptions, and selected configuration.</p><label>Scenario name<input name="name" required maxlength="100" placeholder="Production chat · October"></label><div class="dialog-actions"><button type="button" class="button" data-action="close-dialog">Cancel</button><button class="button primary" type="submit">Save scenario</button></div></form></dialog>
+</body>
+</html>
