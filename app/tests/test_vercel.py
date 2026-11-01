@@ -103,17 +103,12 @@ def test_invalid_client_benchmark_is_rejected(vercel):
     assert vercel.post("/api/compare", json={**plan, "benchmarks": [{"nope": 1}]}).status_code == 422
 
 
-def test_vercel_entry_point_and_config():
-    import importlib
+def test_vercel_config_serves_web_statically_and_app_py_is_the_function():
     from pathlib import Path
 
     root = Path(__file__).parent.parent
     config = json.loads((root / "vercel.json").read_text())
     assert config["outputDirectory"] == "web" and (root / "web/index.html").exists()
-    assert {"source": "/api/(.*)", "destination": "/api/index"} in config["rewrites"]
-    include = config["functions"]["api/index.py"]["includeFiles"]
-    for needed in ("planner/**", "hardware_catalog.json", "examples/**"):
-        assert needed in include
-    entry = importlib.import_module("api.index")
-    assert entry.app is app
-    assert (root / "requirements.txt").read_text().lower().count("fastapi") >= 1
+    assert {"src": "/static/(.*)", "dest": "/$1"} in config["routes"]
+    assert not (root / "api").exists()  # root app.py is Vercel's FastAPI entrypoint; an api/ file would shadow it
+    assert (root / "app.py").exists() and "fastapi" in (root / "requirements.txt").read_text().lower()

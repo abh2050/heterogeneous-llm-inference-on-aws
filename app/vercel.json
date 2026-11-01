@@ -1,14 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "outputDirectory": "web",
-  "functions": {
-    "api/index.py": {
-      "includeFiles": "{app.py,planner/**,hardware_catalog.json,examples/**}",
-      "maxDuration": 30
-    }
-  },
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index" },
-    { "source": "/static/(.*)", "destination": "/$1" }
+  "routes": [
+    { "src": "/static/(.*)", "dest": "/$1" },
+    { "handle": "filesystem" }
   ]
 }

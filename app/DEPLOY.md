@@ -17,10 +17,11 @@ to back it up or move it.
 
 ## What is configured
 
-- `vercel.json`: serves `web/` as static files (`outputDirectory`), rewrites `/api/*` to the function, and
-  rewrites `/static/*` to the static root so the page's `/static/...` URLs resolve. `includeFiles` bundles
-  `planner/`, `hardware_catalog.json` and `examples/` into the function.
-- `api/index.py`: imports the FastAPI `app` from `app.py` (no logic of its own).
+- `app.py` (repo root): Vercel detects it as the FastAPI entrypoint and serves every non-static path from it,
+  with original paths (`/api/...`). There is deliberately no `api/` folder or `/api/*` route in `vercel.json`:
+  a rewrite to a separate function changes the path FastAPI sees and every call returns 404.
+- `vercel.json`: serves `web/` as static files (`outputDirectory`) and maps `/static/*` to the static root so the
+  page's `/static/...` URLs resolve.
 - `requirements.txt`: runtime dependencies, exported from `uv.lock`. Regenerate after changing dependencies:
   `uv export --no-dev --no-hashes --no-emit-project | grep -v '^#' > requirements.txt`
 - `.vercelignore`: keeps `.venv`, tests, docs and local databases out of the upload.
@@ -71,9 +72,9 @@ Open the printed URL. `GET /api/health` should return `{"status":"ok",...}`.
 `./run.sh` still starts the app on http://127.0.0.1:8765 with SQLite. Without `VERCEL` or `STORAGE_MODE` set,
 local mode is used, and the full test suite (`uv run pytest -q`) covers both modes.
 
-## Not verified here
+## Verified
 
-The Vercel configuration was written against the Vercel Python runtime's documented conventions and exercised
-locally (entry point import, both storage modes, browser persistence). It has **not** been deployed from this
-workspace: the Vercel CLI is not installed and no account was used. Treat the first deployment as the real test.
-If the build fails on bundle size, drop `plotly` usage or move chart generation to the browser.
+Deployed with the Vercel CLI (Vercel Python 3.12, dependencies from `uv.lock`): `/`, `/static/*`, `/api/health`,
+`/api/bootstrap` (`storage_mode: vercel`), `/api/models/search`, `/api/docs` and `/api/compare` all respond.
+Deployment Protection is on by default for new projects; turn it off under **Settings → Deployment Protection**
+for a public URL. Browser-side IndexedDB persistence was verified locally in Chrome, not on the deployed site.
