@@ -7,7 +7,7 @@ case $SHAPE in
   rag)  IN=2048; OUT=256 ;;
 esac
 if [ "$NODE" = gpu ]; then
-  N=300; RES=${RESDIR:-$HOME/results}
+  N=${NUM_PROMPTS:-300}; RES=${RESDIR:-$HOME/results}
   BENCH="vllm bench serve"
 else
   N=60; RES=/results

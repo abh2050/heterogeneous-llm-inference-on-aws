@@ -182,6 +182,51 @@ Findings:
 
 **Offload experiment rates (5.4.4):** R_CHAT = 70% of GPU chat capacity = about 39 req/s. R_BG = CPU rag capacity on the TTFT-only yardstick = 2 req/s. That is close to the GPU's own rag saturation (about 2.5 req/s), so Run A should put the GPU under real pressure.
 
+### Phase 5.4: heterogeneous routing
+
+**Setup.** GPU server restarted (new IP `18.221.128.70`; IP changes on every stop/start). **Gate 3b passed:** the GPU node reached `http://172.31.37.221:8000` over the private network. LiteLLM router in its own venv (`~/router`) on the GPU node, port 4000, `scripts/router.yaml` (`qwen-fast` to GPU, `qwen-batch` to CPU private IP). LiteLLM refused to start without a master key, so a random key lives in `~/router.env` on the node (not in the repo). Both routes tested and answered.
+
+**Router hop cost (5.4.3)**: chat shape, 200 requests at 4 req/s, warmed (`scripts/router_overhead.sh`):
+
+| Path | p50 TTFT | p99 TTFT | p50 ITL | p99 ITL | Out tok/s |
+|---|---|---|---|---|---|
+| direct to vLLM :8000 | 46.6 ms | 68.0 ms | 14.00 ms | 22.2 ms | 494 |
+| via LiteLLM :4000 | 63.2 ms | 352.3 ms | 13.95 ms | 28.1 ms | 489 |
+
+The router adds about 17 ms at p50 TTFT and nothing measurable to ITL or throughput. The p99 TTFT rise (+284 ms) reflects the 4-vCPU GPU node sharing CPU between router, vLLM and the benchmark client; a real deployment would give the router its own instance.
+
+**Correction to the GPU chat capacity.** The 56 req/s figure from the 300-request sweep was an overestimate: 300 requests at 56 req/s last about 5 s, so no queue builds. The first offload attempt at 39 req/s (`results/gpu/offload_overloaded/`, `scripts/offload_overloaded_R39_BG2.sh`) showed the GPU already overloaded with chat alone (p99 TTFT 19.5 s). Sustained sweep, 1,500 requests per rate (`results/gpu/sustained/`, `logs/sustained_gpu_chat*.log`):
+
+| Rate | Out tok/s | p50 TTFT ms | p99 TTFT ms | p99 ITL ms | Meets SLO |
+|---|---|---|---|---|---|
+| 16 | 2005 | 52 | 67 | 22.1 | yes |
+| 20 | 2491 | 58 | 77 | 26.0 | yes |
+| 24 | 2971 | 65 | 92 | 30.6 | yes |
+| 28 | 3441 | 77 | 113 | 37.4 | yes |
+| 32 | 3888 | 99 | 142 | 48.0 | yes |
+| 34 | 4098 | 114 | 173 | 56.6 | yes |
+| 36 | 4148 | 144 | 1533 | 70.5 | **no** |
+| 38 | 4167 | 218 | 3666 | 72.9 | no |
+
+**Sustained GPU chat capacity: 34 req/s, 4,098 output tok/s, $0.0546 per 1M output tokens.** Saturated throughput is about 4,150 tok/s. The short-run table in Phase 5.2 above overstates capacity near the knee; treat this table as the real one. The same short-run bias applies to the CPU numbers (60 requests per rate): Run B's background work sustained only about 0.76 rag req/s (240 requests took 314 s) against the 2 req/s read from the 60-request sweep. CPU capacity figures above are likewise upper bounds.
+
+**Offload experiment (5.4.4)**, final run (`scripts/offload.sh`): interactive chat 1,500 requests at 24 req/s (70% of the sustained 34), background rag 120 requests at 0.75 req/s (the CPU's sustained rag throughput), seed 42 / 7. Interactive traffic goes direct to vLLM in all runs (deviation from the runbook, which sends it through the router: at that rate router plus two benchmark clients would compete for the node's 4 vCPUs). Only the background route differs.
+
+| Run | p50 TTFT | p99 TTFT | p50 ITL | p99 ITL | Out tok/s |
+|---|---|---|---|---|---|
+| 0: chat alone | 65 ms | 91 ms | 19.7 ms | 30.2 ms | 2971 |
+| A: background rag on GPU | 9368 ms | 24702 ms | 111.5 ms | 203.7 ms | 2009 |
+| B: background rag on CPU via router | 162 ms | 289 ms | 47.9 ms | 112.0 ms | 2942 |
+
+Background rag itself: A on GPU p50 TTFT 478 ms (p99 23,971 ms), done in 164 s; B on CPU p50 TTFT 1,952 ms (p99 58,103 ms), done in 186 s.
+
+**Finding: offloading background RAG to the CPU node protected the GPU's interactive users.** p99 TTFT fell 85x (24.7 s to 289 ms), p99 ITL fell 1.8x (204 ms to 112 ms), and throughput returned to the chat-alone level. Even 0.75 req/s of long-prompt work, added to 70% chat load, pushed the GPU past capacity.
+
+Caveats:
+- Run B is not as good as Run 0 (p99 TTFT 289 vs 91 ms; p99 ITL 112 vs 30 ms) and misses the 100 ms ITL target. Much of that gap is probably CPU contention on the 4-vCPU GPU node (router, second benchmark client), not GPU interference. Not isolated.
+- Single run per condition; no repeats, so run-to-run variance is unknown.
+- Files: `results/gpu/mix_*.json`, `results/gpu/bg_*.json`, `logs/offload.log`, `logs/bg_A.log`, `logs/bg_B.log`.
+
 ## Still to do
 - GPU rag sweep results; then 5.3 tuning (configs A/B/C) before stopping the GPU.
 - Stop GPU, then Phase 3 (CPU node), CPU sweeps, restart GPU for Gate 3b and 5.4 (router, offload A/B).

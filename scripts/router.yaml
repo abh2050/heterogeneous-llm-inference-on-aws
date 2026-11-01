@@ -1,0 +1,9 @@
+model_list:
+  - model_name: qwen-fast
+    litellm_params:
+      model: hosted_vllm/Qwen/Qwen2.5-1.5B-Instruct
+      api_base: http://localhost:8000/v1
+  - model_name: qwen-batch
+    litellm_params:
+      model: hosted_vllm/Qwen/Qwen2.5-1.5B-Instruct
+      api_base: http://172.31.37.221:8000/v1
