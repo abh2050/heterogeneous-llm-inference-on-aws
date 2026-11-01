@@ -19,6 +19,7 @@ from planner.demo import example_model
 from planner.exports import DeploymentDetails, kubernetes_yaml, sizing_report, vllm_command
 from planner.hf_metadata import MetadataError, apply_overrides, fetch_model, normalize, parse_model_id
 from planner.models import Assumptions, Candidate, ModelSpec, Workload
+from planner.presets import presets
 from planner.security import scrub
 from planner.service import PlanningRequest, compare
 from planner.sizing import DisaggregationInputs, compare_disaggregated
@@ -112,7 +113,13 @@ def bootstrap():
         "capabilities": caps,
         "hf_token_configured": bool(hf_token()),
         "catalog_version": "2026-10-31.1",
+        "presets": presets(),
     }
+
+
+@app.get("/api/presets")
+def workload_presets():
+    return presets()
 
 
 @app.post("/api/metadata")

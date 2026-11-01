@@ -188,3 +188,16 @@ def test_scheduler_budget_and_gqa_geometry(model, hardware, workload, assumption
     assert not estimate(model, hardware, workload, small_budget, 1, 32).feasible
     invalid_gqa = model.model_copy(update={"kv_heads": 5})
     assert not estimate(invalid_gqa, hardware, workload, assumptions, 1, 1).feasible
+
+
+def test_workload_presets_are_valid_distinct_and_cover_four_jobs():
+    from planner.models import Workload
+    from planner.presets import presets
+
+    listed = presets()
+    assert [p["id"] for p in listed] == ["chat", "rag", "coding", "agents"]
+    for p in listed:
+        w = Workload(**p["workload"])
+        assert w.input_max + w.output_max == p["context_length"]
+        assert w.input_avg <= w.input_max and w.output_avg <= w.output_max
+    assert len({p["workload"]["input_avg"] for p in listed}) == 4

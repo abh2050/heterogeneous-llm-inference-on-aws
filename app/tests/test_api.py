@@ -118,3 +118,13 @@ def test_service_error_does_not_expose_credentials(client, monkeypatch):
     response = client.post("/api/benchmark/health", json={})
     assert response.status_code == 500
     assert "synthetic-secret" not in response.text
+
+
+def test_presets_served_in_bootstrap_and_endpoint(client):
+    boot = client.get("/api/bootstrap").json()
+    assert [p["id"] for p in boot["presets"]] == ["chat", "rag", "coding", "agents"]
+    assert client.get("/api/presets").json() == boot["presets"]
+    # A preset applied to the existing workload still runs through the unchanged comparison.
+    plan = get_plan(client)
+    plan["workload"].update(boot["presets"][0]["workload"])
+    assert client.post("/api/compare", json=plan).status_code == 200
