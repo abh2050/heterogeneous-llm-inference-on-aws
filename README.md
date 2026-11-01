@@ -53,6 +53,14 @@ Both nodes served `Qwen/Qwen2.5-1.5B-Instruct` in BF16 with vLLM 0.29.0 and a ma
 
 This is a small experiment, not a production deployment. A production version would place the router and load generators on separate compute, run multiple replicas across Availability Zones, add autoscaling and health-based routing, and persist observability data.
 
+### Full inference stack map
+
+The experiment above implements a small subset of the complete serving stack. This diagram shows where that subset fits—from client access and routing down through the engine, runtime, hardware, cluster, and facility layers.
+
+[![Full inference stack map showing 19 layers from client applications to infrastructure](docs/assets/claude-inference-stack.png)](docs/assets/claude-inference-stack.svg)
+
+Click the diagram to open the scalable version. The editable source is [`claude-inference-stack.drawio`](claude-inference-stack.drawio).
+
 ## What we measured
 
 The project uses two request shapes because they stress the system differently.
