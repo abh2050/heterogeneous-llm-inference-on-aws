@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="An interactive, layer-by-layer comparison of production LLM inference stacks on Intel, NVIDIA, and AMD.">
+  <title>Inference Stack Atlas — Intel, NVIDIA & AMD</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="Inference Stack Atlas home"><span class="brand-mark">IS</span><span>Inference Stack Atlas</span></a>
+    <nav aria-label="Primary"><a href="#journey">Request journey</a><a href="#compare">Compare</a><a href="#concepts">Concepts</a></nav>
+    <button class="theme" id="themeToggle" type="button" aria-label="Toggle color theme">◐</button>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="top">
+      <div class="eyebrow">Production LLM inference, layer by layer</div>
+      <h1>One request.<br><span>Three silicon paths.</span></h1>
+      <p class="lede">Follow a prompt from the public API to kernels and accelerators, then compare how Intel, NVIDIA, and AMD fill each layer. The architecture stays familiar; the names, runtimes, and optimization choices change.</p>
+      <div class="hero-actions"><a class="button primary" href="#journey">Trace the request</a><a class="button secondary" href="#compare">Open stack comparison</a></div>
+      <div class="hero-note"><span class="pulse"></span><strong>Core idea</strong> Prefill is compute-heavy. Decode is memory-bandwidth-heavy. Every stack is ultimately optimizing that tension.</div>
+      <div class="signal" aria-hidden="true"><span>REQUEST</span><i></i><i></i><i></i><i></i><i></i><span>TOKENS</span></div>
+    </section>
+
+    <section class="section journey" id="journey">
+      <div class="section-head"><div><div class="kicker">01 · Request journey</div><h2>Down the stack. Back as tokens.</h2></div><p>Select a layer to see its responsibility and how it affects latency, throughput, or reliability.</p></div>
+      <div class="journey-layout">
+        <div class="flow" id="flow" role="list" aria-label="Inference request layers"></div>
+        <aside class="detail" id="layerDetail" aria-live="polite"></aside>
+      </div>
+    </section>
+
+    <section class="section compare" id="compare">
+      <div class="section-head"><div><div class="kicker">02 · Vendor comparison</div><h2>Same job. Different machinery.</h2></div><p>This is a reference architecture, not a claim that one vendor product owns every layer. Edge, gateway, safety, Kubernetes, storage, and observability are usually assembled independently.</p></div>
+      <div class="vendor-tabs" role="tablist" aria-label="Select vendor">
+        <button class="vendor-tab active" data-vendor="all" role="tab" aria-selected="true">All stacks</button>
+        <button class="vendor-tab intel" data-vendor="intel" role="tab" aria-selected="false">Intel</button>
+        <button class="vendor-tab nvidia" data-vendor="nvidia" role="tab" aria-selected="false">NVIDIA</button>
+        <button class="vendor-tab amd" data-vendor="amd" role="tab" aria-selected="false">AMD</button>
+      </div>
+      <div class="stack-grid" id="stackGrid"></div>
+      <div class="legend"><span><i class="shared-dot"></i>Shared/open layer</span><span><i class="vendor-dot"></i>Vendor-tuned layer</span><span>Click any cell for an explanation</span></div>
+    </section>
+
+    <section class="section split" id="concepts">
+      <div class="concept-copy"><div class="kicker">03 · The engine room</div><h2>Why inference needs a stack.</h2><p>A model checkpoint is only frozen weights. Serving turns those weights into a reliable product: tokenize requests, schedule batches, allocate KV blocks, run fused kernels, stream output, and observe every tail-latency failure.</p>
+        <div class="phase-switch" role="group" aria-label="Inference phase"><button class="active" data-phase="prefill">Prefill</button><button data-phase="decode">Decode</button></div>
+        <div id="phaseCopy" class="phase-copy"></div>
+      </div>
+      <div class="memory-viz" aria-label="Animated model and KV cache visualization">
+        <div class="chip-label">MODEL EXECUTION</div><div class="chip"><div class="chip-grid"></div><span id="chipText">Parallel prompt processing</span></div>
+        <div class="cache"><span>KV CACHE</span><div id="cacheBlocks"></div></div>
+      </div>
+    </section>
+
+    <section class="section source-material">
+      <div class="section-head"><div><div class="kicker">04 · Source material</div><h2>From map to explainer.</h2></div><p>The original diagrams remain part of the repository and are linked here for deeper inspection.</p></div>
+      <div class="source-grid">
+        <a class="source-card mindmap" href="assets/notebooklm-mind-map.png" target="_blank"><div class="source-preview"></div><div><span>Concept map · PNG</span><h3>AI Inference Engineering</h3><p>Fundamentals, metrics, optimization, serving infrastructure, cost, and alternative architectures.</p></div></a>
+        <a class="source-card blueprint" href="assets/claude-inference-stack.drawio" download><div class="blueprint-lines" aria-hidden="true"></div><div><span>Architecture source · draw.io</span><h3>Full Stack Map</h3><p>Nineteen layers across access, control, compute software, hardware, and infrastructure.</p></div></a>
+      </div>
+    </section>
+
+    <section class="section sources">
+      <div class="kicker">Primary references</div><h2>Read the implementation docs.</h2>
+      <div class="source-links"><a href="https://www.intel.com/content/www/us/en/developer/tools/ai-inference/overview.html">Intel AI for Enterprise Inference ↗</a><a href="https://docs.nvidia.com/dynamo/latest/knowledge-base/overview">NVIDIA Dynamo architecture ↗</a><a href="https://rocm.docs.amd.com/en/latest/how-to/rocm-for-ai/inference/deploy-your-model.html">AMD ROCm model deployment ↗</a><a href="https://docs.vllm.ai/">vLLM documentation ↗</a></div>
+      <p class="footnote">Products and compatibility evolve quickly. Verify current support matrices before choosing hardware or production topology. Vendor names and trademarks belong to their respective owners.</p>
+    </section>
+  </main>
+  <footer><span>Inference Stack Atlas</span><span>Built from the heterogeneous LLM inference study guide.</span></footer>
+  <dialog id="cellDialog"><button class="dialog-close" aria-label="Close">×</button><div id="dialogContent"></div></dialog>
+  <script src="app.js"></script>
+</body>
+</html>

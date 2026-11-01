@@ -6,6 +6,8 @@ Each section explains one idea, names the phase that measures it, and ends with 
 
 **Study notebook.** [Open the NotebookLM notebook](https://notebooklm.link.google/H4cSGexBcIjw) for this project.
 
+**Interactive visual explainer.** [Open the Inference Stack Atlas](docs/index.html) for a layer-by-layer request journey and an interactive comparison of Intel, NVIDIA, and AMD inference stacks. The supporting source artifacts are the [full-stack draw.io diagram](claude-inference-stack.drawio) and the [NotebookLM mind map](NotebookLM%20Mind%20Map.png).
+
 **Repository layout.** This guide is the root README. The runbook is `PLAN.md`, measured results are in `RUNLOG.md`, `results/` and `logs/`, and the experiment scripts are in `scripts/`. `app/` holds Inference Atlas, a local capacity-planning web app built on these ideas. See [app/README.md](app/README.md) to run it.
 
 The back-of-envelope numbers here are estimates from spec sheets. Expect real numbers to land somewhere between 30% and 80% of the theoretical ceilings.
