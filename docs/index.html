@@ -3,118 +3,112 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="How a heterogeneous AWS LLM inference experiment used an NVIDIA GPU and Intel CPU to protect interactive chat from background RAG traffic.">
-  <title>Heterogeneous LLM Inference on AWS — Experiment & Stack</title>
+  <meta name="description" content="A measured AWS experiment and interactive guide to the complete LLM inference stack, from API request to power grid.">
+  <meta name="theme-color" content="#4f46e5">
+  <title>Heterogeneous LLM Inference on AWS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <a class="skip" href="#main">Skip to content</a>
-  <header class="topbar">
-    <a class="brand" href="#top" aria-label="Heterogeneous inference experiment home"><span class="brand-mark">HI</span><span>Heterogeneous Inference</span></a>
-    <nav aria-label="Primary"><a href="#experiment">Experiment</a><a href="#result">Results</a><a href="#architecture">Architecture</a><a href="#builder">Build a stack</a></nav>
-    <button class="theme" id="themeToggle" type="button" aria-label="Toggle color theme">◐</button>
+  <a class="skip" href="#main">Skip to main content</a>
+  <header class="site-nav">
+    <a class="wordmark" href="#top"><span>HI</span><strong>Heterogeneous Inference</strong></a>
+    <nav aria-label="Page sections"><a href="#system">System</a><a href="#experiments">Experiments</a><a href="#selector">Stack selector</a><a href="#concepts">Concepts</a></nav>
+    <button id="themeToggle" class="theme-toggle" type="button" aria-label="Switch color theme" aria-pressed="false">◐</button>
   </header>
 
   <main id="main">
     <section class="hero" id="top">
-      <div class="eyebrow">A measured AWS inference experiment</div>
-      <h1>Protect chat.<br><span>Offload the batch.</span></h1>
-      <p class="lede">We served the same Qwen model on an NVIDIA L4 GPU and an Intel CPU, routed interactive chat and background RAG separately, and measured whether workload isolation protects user latency.</p>
-      <div class="hero-actions"><a class="button primary" href="#experiment">See what we built</a><a class="button secondary" href="#result">Jump to the result</a></div>
-      <div class="hero-note"><span class="pulse"></span><strong>Final result</strong> CPU offload changed chat p99 time-to-first-token from 24.7 seconds to 289 milliseconds.</div>
-      <div class="signal" aria-hidden="true"><span>REQUEST</span><i></i><i></i><i></i><i></i><i></i><span>TOKENS</span></div>
+      <div class="hero-copy">
+        <p class="eyebrow">AWS experiment · Qwen2.5 1.5B · vLLM</p>
+        <h1>Long RAG prompts made chat users wait. <span>A separate CPU pool fixed it.</span></h1>
+        <p class="hero-lede">We served the same model on an NVIDIA L4 and an Intel Sapphire Rapids CPU, then measured what happened when interactive chat and background RAG shared—or stopped sharing—the GPU.</p>
+        <div class="hero-actions"><a class="btn primary" href="#system">See the system</a><a class="btn ghost" href="#selector">Build a stack</a></div>
+      </div>
+      <aside class="hero-stat" aria-label="Main experiment result">
+        <span>CHAT p99 TIME TO FIRST TOKEN</span>
+        <div><s id="heroBefore">Loading…</s><b>→</b><strong id="heroAfter">Loading…</strong></div>
+        <p><strong id="heroImprovement">Loading result…</strong> when background RAG moved from the shared GPU to the CPU pool.</p>
+      </aside>
     </section>
 
-    <section class="section experiment" id="experiment">
-      <div class="section-head"><div><div class="kicker">01 · What we built</div><h2>One API. Two compute pools. Two jobs.</h2></div><p>A small, production-shaped service in AWS `us-east-2`, built to test whether interactive and background inference should share hardware.</p></div>
-      <div class="experiment-grid">
-        <article><span>MODEL</span><h3>Qwen2.5 1.5B</h3><p>The same BF16 model and vLLM 0.29.0 runtime ran on both nodes, so the hardware and workload placement were the changing variables.</p></article>
-        <article><span>FAST POOL</span><h3>NVIDIA L4</h3><p>An AWS `g6.xlarge` served 256-token chat prompts where first-token delay and smooth streaming matter.</p></article>
-        <article><span>BATCH POOL</span><h3>Intel Sapphire Rapids</h3><p>An AWS `c7i.4xlarge` served 2,048-token RAG prompts where completion matters more than interactive latency.</p></article>
-      </div>
-      <div class="built-flow" aria-label="Experiment architecture">
-        <div class="built-node users"><small>CLIENT</small><strong>OpenAI-compatible request</strong></div><i>→</i>
-        <div class="built-node router"><small>ROUTER</small><strong>LiteLLM</strong><span>qwen-fast / qwen-batch</span></div><i>→</i>
-        <div class="built-split"><div class="built-node gpu"><small>INTERACTIVE</small><strong>L4 GPU + vLLM</strong><span>Chat</span></div><div class="built-node cpu"><small>BACKGROUND</small><strong>Intel CPU + vLLM</strong><span>RAG</span></div></div>
-      </div>
+    <section class="scoreboard" aria-label="Experiment highlights"><div id="scoreboard" class="score-grid"></div></section>
+
+    <section class="section" id="system">
+      <header class="section-header"><span>01</span><div><p>THE SYSTEM WE BUILT</p><h2>One API, two compute pools, two jobs</h2></div></header>
+      <div class="section-intro"><p>This was a small production-shaped service in AWS `us-east-2`. Every box is interactive: open it to see its role and the experiment evidence behind it.</p></div>
+      <div class="system-diagram" id="systemDiagram" aria-label="Interactive experiment architecture"></div>
+      <div id="systemDetail" class="system-detail" hidden></div>
     </section>
 
-    <section class="section results" id="result">
-      <div class="section-head"><div><div class="kicker">02 · Final output</div><h2>Isolation rescued the user experience.</h2></div><p>Interactive chat ran at 24 requests/s. Background RAG ran at 0.75 requests/s. Only the background route changed.</p></div>
-      <div class="result-cards">
-        <article><span>CHAT ALONE</span><strong>91<small> ms</small></strong><p>p99 time to first token with no background work.</p></article>
-        <article class="bad"><span>RAG SHARES GPU</span><strong>24.7<small> s</small></strong><p>Long prefills pushed chat beyond capacity and created a large queue.</p></article>
-        <article class="good"><span>RAG MOVES TO CPU</span><strong>289<small> ms</small></strong><p>Chat throughput returned close to baseline: 2,942 vs 2,971 output tok/s.</p></article>
-      </div>
-      <div class="result-takeaway"><strong>What this means</strong><p>The CPU was not the faster inference device. It was valuable as an isolation tier: background jobs finished a little later so interactive users did not wait tens of seconds.</p></div>
-      <div class="result-table-wrap"><table><thead><tr><th>Condition</th><th>Chat p99 TTFT</th><th>Chat p99 ITL</th><th>Chat output</th></tr></thead><tbody><tr><td>Chat alone</td><td>91 ms</td><td>30.2 ms</td><td>2,971 tok/s</td></tr><tr><td>Background RAG on GPU</td><td>24,702 ms</td><td>203.7 ms</td><td>2,009 tok/s</td></tr><tr><td>Background RAG on CPU</td><td>289 ms</td><td>112.0 ms</td><td>2,942 tok/s</td></tr></tbody></table></div>
-      <p class="caveat">Measured once per final condition. The router and benchmark clients shared the four-vCPU GPU host, so the exact improvement needs repeated trials on a cleaner topology.</p>
+    <section class="section" id="experiments">
+      <header class="section-header"><span>02</span><div><p>EXPERIMENT RESULTS</p><h2>Seven questions, answered with measurements</h2></div></header>
+      <div class="section-intro"><p>The cards follow the order of the investigation. Every chart and table is rendered from <code>data/results.json</code>, which is generated from the raw benchmark JSON and run log.</p></div>
+      <div id="experimentCards" class="experiment-list"></div>
     </section>
 
-    <section class="section architecture" id="architecture">
-      <div class="section-head"><div><div class="kicker">03 · Full stack map</div><h2>The diagram is the experience.</h2></div><p>Zoom into the rendered architecture. It connects the small AWS experiment to the complete path from clients and gateways through scheduling, engines, runtimes, hardware, cluster operations, and facilities.</p></div>
-      <figure class="architecture-figure"><a href="assets/claude-inference-stack.svg" target="_blank"><img src="assets/claude-inference-stack.svg" alt="Nineteen-layer full inference stack map comparing an open hardware-neutral path with an NVIDIA path"></a><figcaption><span>Click to open the scalable diagram.</span><a href="assets/claude-inference-stack.drawio">Edit the draw.io source ↗</a></figcaption></figure>
-    </section>
+    <section class="section selector-section" id="selector">
+      <header class="section-header"><span>03</span><div><p>FULL STACK INFERENCE SELECTOR</p><h2>Build from the API request to the power grid</h2></div></header>
+      <div class="selector-intro"><p>Choose a known path or assemble your own. The 19 layers follow the source architecture and the memory hook <strong>A Cool Cluster Hums Inside</strong>.</p><div class="mode-toggle" role="group" aria-label="Selector mode"><button class="active" data-mode="stack">Stack mode</button><button data-mode="workload">Workload mode</button></div></div>
 
-    <section class="section journey" id="journey">
-      <div class="section-head"><div><div class="kicker">04 · Request journey</div><h2>Down the stack. Back as tokens.</h2></div><p>Select a layer to see its responsibility and how it affects latency, throughput, or reliability.</p></div>
-      <div class="journey-layout">
-        <div class="flow" id="flow" role="list" aria-label="Inference request layers"></div>
-        <aside class="detail" id="layerDetail" aria-live="polite"></aside>
-      </div>
-    </section>
-
-    <section class="section compare" id="compare">
-      <div class="section-head"><div><div class="kicker">05 · Vendor comparison</div><h2>Same job. Different machinery.</h2></div><p>This is a reference architecture, not a claim that one vendor product owns every layer. Edge, gateway, safety, Kubernetes, storage, and observability are usually assembled independently.</p></div>
-      <div class="vendor-tabs" role="tablist" aria-label="Select vendor">
-        <button class="vendor-tab active" data-vendor="all" role="tab" aria-selected="true">All stacks</button>
-        <button class="vendor-tab intel" data-vendor="intel" role="tab" aria-selected="false">Intel</button>
-        <button class="vendor-tab nvidia" data-vendor="nvidia" role="tab" aria-selected="false">NVIDIA</button>
-        <button class="vendor-tab amd" data-vendor="amd" role="tab" aria-selected="false">AMD</button>
-      </div>
-      <div class="stack-grid" id="stackGrid"></div>
-      <div class="legend"><span><i class="shared-dot"></i>Shared/open layer</span><span><i class="vendor-dot"></i>Vendor-tuned layer</span><span>Click any cell for an explanation</span></div>
-    </section>
-
-    <section class="section split" id="concepts">
-      <div class="concept-copy"><div class="kicker">06 · The engine room</div><h2>Why inference needs a stack.</h2><p>A model checkpoint is only frozen weights. Serving turns those weights into a reliable product: tokenize requests, schedule batches, allocate KV blocks, run fused kernels, stream output, and observe every tail-latency failure.</p>
-        <div class="phase-switch" role="group" aria-label="Inference phase"><button class="active" data-phase="prefill">Prefill</button><button data-phase="decode">Decode</button></div>
-        <div id="phaseCopy" class="phase-copy"></div>
-      </div>
-      <div class="memory-viz" aria-label="Animated model and KV cache visualization">
-        <div class="chip-label">MODEL EXECUTION</div><div class="chip"><div class="chip-grid"></div><span id="chipText">Parallel prompt processing</span></div>
-        <div class="cache"><span>KV CACHE</span><div id="cacheBlocks"></div></div>
-      </div>
-    </section>
-
-    <section class="section builder" id="builder">
-      <div class="section-head"><div><div class="kicker">07 · System designer</div><h2>Build the stack in order.</h2></div><p>Start with the service you need to deliver. The designer turns that intent into connected architecture decisions—from entrance to operations.</p></div>
-      <div class="builder-shell">
-        <div class="builder-progress"><div class="progress-meta"><span id="builderStep">Step 1 of 10</span><span id="builderPercent">10%</span></div><div class="progress-track"><i id="progressBar"></i></div><div class="step-dots" id="stepDots"></div></div>
-        <div class="builder-body">
-          <div class="builder-question" id="builderQuestion"></div>
-          <aside class="architecture-preview"><div class="preview-head"><span>Live architecture</span><strong id="architectureName">Untitled service</strong></div><div class="architecture-chain" id="architectureChain"></div></aside>
+      <div id="stackMode">
+        <div id="presetBar" class="preset-bar" aria-label="Stack presets"></div>
+        <div id="compatSummary" class="compat-summary" role="status"></div>
+        <div class="selector-layout">
+          <div><div id="stackRows" class="stack-rows"></div><button id="traceButton" class="btn primary trace-button" type="button">Trace a chat request</button><button id="traceType" class="btn ghost" type="button">Switch to RAG</button></div>
+          <aside id="layerPanel" class="layer-panel" aria-live="polite"></aside>
         </div>
-        <div class="builder-nav"><button id="builderBack" class="button secondary" type="button">← Back</button><button id="builderNext" class="button primary" type="button" disabled>Continue →</button></div>
+      </div>
+
+      <div id="workloadMode" hidden>
+        <div class="workload-grid">
+          <form id="workloadForm" class="workload-form">
+            <fieldset><legend>Workload mix</legend><label>Chat <output id="chatOut">60%</output><input name="chat" type="range" min="0" max="100" value="60"></label><label>RAG <output id="ragOut">25%</output><input name="rag" type="range" min="0" max="100" value="25"></label><label>Batch <output id="batchOut">10%</output><input name="batch" type="range" min="0" max="100" value="10"></label><label>Agents <output id="agentOut">5%</output><input name="agent" type="range" min="0" max="100" value="5"></label></fieldset>
+            <fieldset><legend>Prompt length</legend><label class="radio"><input type="radio" name="prompt" value="short" checked> Short · about 256 tokens</label><label class="radio"><input type="radio" name="prompt" value="long"> Long · about 2,048 tokens</label></fieldset>
+            <fieldset><legend>Service targets</legend><label>p99 TTFT (ms)<input name="ttft" type="number" min="1" value="1000"></label><label>p99 ITL (ms)<input name="itl" type="number" min="1" value="100"></label><label>Traffic (requests/s)<input name="rate" type="number" min="0" step="1" value="24"></label></fieldset>
+          </form>
+          <div id="recommendation" class="recommendation" aria-live="polite"></div>
+        </div>
       </div>
     </section>
 
-    <section class="section source-material">
-      <div class="section-head"><div><div class="kicker">08 · Concept map</div><h2>Explore the learning map.</h2></div><p>The NotebookLM map connects fundamentals, metrics, optimization, serving infrastructure, cost, and alternative architectures.</p></div>
-      <div class="source-grid">
-        <a class="source-card mindmap" href="assets/notebooklm-mind-map.png" target="_blank"><div class="source-preview"></div><div><span>Concept map · PNG</span><h3>AI Inference Engineering</h3><p>Fundamentals, metrics, optimization, serving infrastructure, cost, and alternative architectures.</p></div></a>
-        <a class="source-card blueprint" href="assets/claude-inference-stack.svg" target="_blank"><div class="blueprint-lines" aria-hidden="true"></div><div><span>Rendered architecture · SVG</span><h3>Full Stack Map</h3><p>Nineteen visible layers across access, control, compute software, hardware, and infrastructure.</p></div></a>
+    <section class="section" id="concepts">
+      <header class="section-header"><span>04</span><div><p>CONCEPTS LAB</p><h2>Touch the mechanics behind the results</h2></div></header>
+      <div class="concept-grid">
+        <article class="lab-card"><h3>Prefill vs decode</h3><p>Prefill reads the prompt in parallel. Decode produces one token per step.</p><div class="phase-tabs"><button class="active" data-phase="prefill">Prefill</button><button data-phase="decode">Decode</button></div><div id="phaseViz" class="phase-viz"></div><label>Prompt length: <output id="promptOut">2,048</output> tokens<input id="promptSlider" type="range" min="256" max="4096" step="256" value="2048"></label></article>
+        <article class="lab-card"><h3>KV cache calculator</h3><p>Change the model geometry and see how much memory every token consumes.</p><div class="kv-form"><label>Layers<input id="kvLayers" type="number" value="28" min="1"></label><label>KV heads<input id="kvHeads" type="number" value="2" min="1"></label><label>Head dim<input id="kvDim" type="number" value="128" min="1"></label><label>Bytes/value<input id="kvBytes" type="number" value="2" min="0.5" step="0.5"></label></div><div id="kvResult" class="lab-result"></div></article>
+        <article class="lab-card"><h3>The batching knee</h3><p>Move the request rate across the measured L4 curve.</p><label>Request rate: <output id="kneeOut">34</output> req/s<input id="kneeSlider" type="range" min="16" max="38" step="2" value="34"></label><div id="kneeResult" class="lab-result"></div><div class="mini-chart"><canvas id="kneeChart"></canvas></div></article>
       </div>
+      <div id="glossary" class="glossary"></div>
     </section>
 
-    <section class="section sources">
-      <div class="kicker">Primary references</div><h2>Read the implementation docs.</h2>
-      <div class="source-links"><a href="https://www.intel.com/content/www/us/en/developer/tools/ai-inference/overview.html">Intel AI for Enterprise Inference ↗</a><a href="https://docs.nvidia.com/dynamo/latest/knowledge-base/overview">NVIDIA Dynamo architecture ↗</a><a href="https://rocm.docs.amd.com/en/latest/how-to/rocm-for-ai/inference/deploy-your-model.html">AMD ROCm model deployment ↗</a><a href="https://docs.vllm.ai/">vLLM documentation ↗</a></div>
-      <p class="footnote">Products and compatibility evolve quickly. Verify current support matrices before choosing hardware or production topology. Vendor names and trademarks belong to their respective owners.</p>
+    <section class="section" id="production">
+      <header class="section-header"><span>05</span><div><p>FROM EXPERIMENT TO PRODUCTION</p><h2>How the lab maps to an AWS service</h2></div></header>
+      <div class="table-wrap"><table><thead><tr><th>Experiment component</th><th>Production role</th><th>What production adds</th></tr></thead><tbody><tr><td>LiteLLM on one host</td><td>Model gateway and workload router</td><td>Dedicated ECS/EKS service, replicas, authentication, quotas, and health routing</td></tr><tr><td>L4 `g6.xlarge`</td><td>Interactive inference pool</td><td>Multi-AZ node group and scaling on queue depth, TTFT, and running requests</td></tr><tr><td>Sapphire Rapids `c7i.4xlarge`</td><td>Background or overflow pool</td><td>Queue-based jobs, retries, and Spot only when work is interruptible</td></tr><tr><td>vLLM API</td><td>Model-serving container</td><td>Pinned ECR image, startup/readiness probes, canary releases, rollback</td></tr><tr><td>Private VPC connection</td><td>Backend service network</td><td>Private subnets, service discovery, least-privilege security groups</td></tr><tr><td>Benchmark scripts</td><td>Release load test</td><td>Production request distributions and SLO gates in CI</td></tr><tr><td>`/metrics`</td><td>Service telemetry</td><td>Managed Prometheus, CloudWatch, Grafana, traces, and burn-rate alerts</td></tr><tr><td>Local model download</td><td>Weight distribution</td><td>S3/model registry, local NVMe cache, controlled release pipeline</td></tr></tbody></table></div>
+    </section>
+
+    <section class="section" id="limitations">
+      <header class="section-header"><span>06</span><div><p>EVIDENCE BOUNDARIES</p><h2>Measured, calculated, and still uncertain</h2></div></header>
+      <div class="evidence-grid"><article><span class="badge measured">MEASURED</span><h3>Direct observations</h3><p>TTFT, ITL, throughput, KV pool, engine comparison, router overhead, and mixed-workload behavior for this exact setup.</p></article><article><span class="badge calculated">CALCULATED</span><h3>Derived from measurements</h3><p>Cost per million output tokens, speedup ratios, the 70% load point, and the 85× TTFT improvement.</p></article><article><span class="badge estimated">ESTIMATED</span><h3>Useful sanity checks</h3><p>Roofline ceilings and theoretical compute or bandwidth explanations. These are not capacity commitments.</p></article></div>
+      <div class="limitations"><h3>Limits you should say out loud</h3><ul><li>One small model and one precision were tested.</li><li>The final mixed-workload conditions were run once; variance is unknown.</li><li>CPU sweep runs were short, so their capacity values are upper bounds.</li><li>The router and two benchmark clients shared the four-vCPU GPU host.</li><li>Traffic stayed inside one VPC and one AWS region (`us-east-2`).</li><li>Autoscaling, multi-AZ failover, rolling releases, and sustained observability were not tested.</li><li>Prices are the experiment inputs, not current AWS quotes.</li></ul></div>
+    </section>
+
+    <section class="section" id="reproduce">
+      <header class="section-header"><span>07</span><div><p>REPRODUCE THE WORK</p><h2>Inspect the evidence, not just the conclusion</h2></div></header>
+      <div class="resource-grid"><a href="https://github.com/abh2050/heterogeneous-llm-inference-on-aws/blob/main/RUNLOG.md"><strong>RUNLOG.md</strong><span>Chronology and full tables</span></a><a href="https://github.com/abh2050/heterogeneous-llm-inference-on-aws/blob/main/PLAN.md"><strong>PLAN.md</strong><span>Execution plan and gates</span></a><a href="https://github.com/abh2050/heterogeneous-llm-inference-on-aws/tree/main/scripts"><strong>scripts/</strong><span>Benchmarks and data build</span></a><a href="https://github.com/abh2050/heterogeneous-llm-inference-on-aws/tree/main/results"><strong>results/</strong><span>Raw benchmark JSON</span></a><a href="https://github.com/abh2050/heterogeneous-llm-inference-on-aws/tree/main/logs"><strong>logs/</strong><span>Server and client logs</span></a><a href="assets/claude-inference-stack.drawio"><strong>draw.io source</strong><span>Editable 19-layer diagram</span></a><a href="assets/notebooklm-mind-map.png"><strong>Mind map</strong><span>Concept relationships</span></a><a href="https://github.com/abh2050/heterogeneous-llm-inference-on-aws/tree/main/app"><strong>Inference Atlas</strong><span>Capacity-planning application</span></a></div>
+      <figure class="full-map"><a href="assets/claude-inference-stack.svg"><img src="assets/claude-inference-stack.svg" loading="lazy" alt="Full nineteen-layer inference stack map from client applications to the power grid"></a><figcaption>Full stack map · click to open the scalable version</figcaption></figure>
+    </section>
+
+    <section class="section reading" id="reading">
+      <header class="section-header"><span>08</span><div><p>FURTHER READING</p><h2>The papers behind the stack</h2></div></header>
+      <ol><li><strong>PagedAttention</strong> — explains the block-based KV memory design that made vLLM practical at high concurrency.</li><li><strong>Orca</strong> — introduced iteration-level scheduling, the foundation of continuous batching.</li><li><strong>Sarathi-Serve</strong> — studies chunked prefill and the trade between throughput and decode stalls.</li><li><strong>DistServe</strong> — separates prefill and decode so each phase can scale for its own bottleneck.</li><li><strong>Splitwise</strong> — explores phase splitting across heterogeneous hardware and its system-level tradeoffs.</li></ol>
     </section>
   </main>
-  <footer><span>Heterogeneous LLM Inference on AWS</span><span>A measured experiment, full-stack map, and architecture builder.</span></footer>
-  <dialog id="cellDialog"><button class="dialog-close" aria-label="Close">×</button><div id="dialogContent"></div></dialog>
+
+  <footer><span>Heterogeneous LLM Inference on AWS</span><span>Measured evidence · explicit limitations · reproducible artifacts</span></footer>
+  <script src="vendor/chart.umd.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

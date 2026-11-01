@@ -1,0 +1,10 @@
+{
+  "rules": [
+    {"requires": ["TensorRT-LLM", "Dynamo KV Block Manager", "NVLink", "NCCL", "NIM"], "hardware": ["NVIDIA L4", "NVIDIA H100/H200/B200"], "message": "requires NVIDIA hardware"},
+    {"requires": ["XLA", "libtpu"], "hardware": ["Google TPU"], "message": "requires Google TPU"},
+    {"requires": ["Neuron compiler", "Neuron runtime"], "hardware": ["AWS Inferentia/Trainium"], "message": "requires AWS Inferentia or Trainium"},
+    {"requires": ["vLLM CPU + AMX"], "hardware": ["Intel Xeon + AMX", "NVIDIA L4 + Intel Xeon/AMX"], "message": "requires a CPU node; this profile expects Intel Xeon with AMX"},
+    {"requires": ["ROCm", "RCCL"], "hardware": ["AMD Instinct"], "message": "requires AMD Instinct hardware"},
+    {"requires": ["oneAPI", "oneCCL", "SynapseAI"], "hardware": ["Intel Xeon + AMX", "Intel Gaudi"], "message": "requires an Intel CPU or Gaudi path"}
+  ]
+}
