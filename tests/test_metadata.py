@@ -38,7 +38,6 @@ def test_tensor_metadata_preferred_and_override_provenance(model):
 @pytest.mark.parametrize(
     "extra",
     [
-        {"num_local_experts": 8},
         {"sliding_window": 4096},
         {"kv_lora_rank": 512},
         {"layer_types": ["full_attention", "mamba"]},
@@ -47,6 +46,31 @@ def test_tensor_metadata_preferred_and_override_provenance(model):
 def test_special_architectures_unsupported(model, extra):
     config = {**model.raw_config, **extra}
     assert normalize("org/model", None, config).unsupported
+
+
+def test_qwen3_30b_a3b_moe_total_and_active_parameters():
+    config = {
+        "model_type": "qwen3_moe",
+        "architectures": ["Qwen3MoeForCausalLM"],
+        "num_hidden_layers": 48,
+        "num_attention_heads": 32,
+        "num_key_value_heads": 4,
+        "hidden_size": 2048,
+        "head_dim": 128,
+        "max_position_embeddings": 40960,
+        "vocab_size": 151936,
+        "num_experts": 128,
+        "num_experts_per_tok": 8,
+        "moe_intermediate_size": 768,
+        "shared_expert_intermediate_size": 768,
+    }
+    model = normalize("Qwen/Qwen3-30B-A3B", "a" * 40, config, parameters=30_500_000_000)
+    assert model.unsupported == []
+    assert model.parameters == 30_500_000_000
+    assert 3_200_000_000 < model.active_parameters < 3_500_000_000
+    assert model.is_moe
+    assert model.num_experts == 128
+    assert model.num_experts_per_tok == 8
 
 
 def test_disabled_sliding_window_is_not_assumed_active(model):

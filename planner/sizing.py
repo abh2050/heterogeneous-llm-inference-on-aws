@@ -147,7 +147,7 @@ def service_times(
     # KV heads replicate when tp exceeds their count; aggregate traffic is scaled accordingly.
     kv_replication = tp / min(tp, model.kv_heads)
     traffic = (
-        model.parameters * (model.effective_weight_bytes or a.weight_bytes) * (1 + a.weight_overhead)
+        p * (model.effective_weight_bytes or a.weight_bytes) * (1 + a.weight_overhead)
         + kv_bytes_per_token(model, a.kv_bytes) * context * concurrency * kv_replication
     )
     decode_flops = concurrency * (2 * p + 4 * model.layers * model.hidden_size * context)

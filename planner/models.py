@@ -32,6 +32,9 @@ class ModelSpec(Record):
     model_type: str = "unknown"
     parameters: int | None = Field(default=None, gt=0)
     active_parameters: int | None = Field(default=None, gt=0)
+    num_experts: int | None = Field(default=None, gt=0)
+    num_experts_per_tok: int | None = Field(default=None, gt=0)
+    expert_intermediate_size: int | None = Field(default=None, gt=0)
     layers: int | None = Field(default=None, gt=0)
     attention_heads: int | None = Field(default=None, gt=0)
     kv_heads: int | None = Field(default=None, gt=0)
@@ -46,6 +49,10 @@ class ModelSpec(Record):
     unsupported: list[str] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
     raw_config: dict[str, Any] = Field(default_factory=dict)
+
+    @property
+    def is_moe(self) -> bool:
+        return bool(self.num_experts and self.num_experts_per_tok)
 
     @property
     def missing(self) -> list[str]:

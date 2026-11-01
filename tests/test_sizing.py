@@ -40,6 +40,17 @@ def test_precision_changes_only_kv_not_weights(model, hardware, workload, assump
     assert m8["weights"] == m["weights"]
 
 
+def test_moe_memory_uses_total_but_decode_uses_active(model, hardware, workload, assumptions):
+    moe = model.model_copy(update={"parameters": 30_000_000_000, "active_parameters": 3_000_000_000})
+    dense = moe.model_copy(update={"active_parameters": 30_000_000_000})
+    assert memory_breakdown(moe, hardware, workload, assumptions, 1, 8)["weights"] == memory_breakdown(
+        dense, hardware, workload, assumptions, 1, 8
+    )["weights"]
+    assert service_times(moe, hardware, workload, assumptions, 1, 8).tpot_s < service_times(
+        dense, hardware, workload, assumptions, 1, 8
+    ).tpot_s
+
+
 def test_memory_exhaustion_is_not_serving_capacity(model, hardware, workload, assumptions):
     c = estimate(model, hardware, workload, assumptions, 1, 1024)
     assert not c.feasible

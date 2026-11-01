@@ -78,10 +78,12 @@ def normalize(
     heads = get("attention_heads", ["num_attention_heads", "n_head", "n_heads"])
     hidden = get("hidden_size", ["hidden_size", "n_embd", "d_model"])
     dense_types = {"llama", "qwen2", "qwen3", "mistral"}
+    moe_types = {"qwen3_moe", "qwen2_moe", "mixtral"}
+    supported_types = dense_types | moe_types
     kv = get(
         "kv_heads",
         ["num_key_value_heads", "num_kv_heads", "n_head_kv"],
-        heads if model_type in dense_types else None,
+        heads if model_type in supported_types else None,
     )
     dim = get("head_dim", ["head_dim", "attention_head_dim"])
     if dim is None and hidden and heads and hidden % heads == 0:
@@ -95,10 +97,27 @@ def normalize(
     prov["quantization"] = Provenance(
         source="config.json.quantization_config (empty when absent)", kind="Repository"
     )
+    num_experts = get("num_experts", ["num_experts", "num_local_experts", "n_routed_experts"])
+    experts_per_tok = get(
+        "num_experts_per_tok", ["num_experts_per_tok", "num_experts_per_token", "num_selected_experts", "top_k"]
+    )
+    expert_size = get(
+        "expert_intermediate_size",
+        ["moe_intermediate_size", "expert_intermediate_size", "ffn_dim_per_expert"],
+    )
+    is_moe = bool(num_experts and experts_per_tok)
     notes, unsupported = [], []
-    if model_type not in dense_types:
-        unsupported.append(f"No validated dense estimator for model_type={model_type}")
-    known_architectures = {"LlamaForCausalLM", "Qwen2ForCausalLM", "Qwen3ForCausalLM", "MistralForCausalLM"}
+    if model_type not in supported_types:
+        unsupported.append(f"No validated estimator for model_type={model_type}")
+    known_architectures = {
+        "LlamaForCausalLM",
+        "Qwen2ForCausalLM",
+        "Qwen3ForCausalLM",
+        "MistralForCausalLM",
+        "Qwen3MoeForCausalLM",
+        "Qwen2MoeForCausalLM",
+        "MixtralForCausalLM",
+    }
     if arch not in known_architectures:
         unsupported.append(f"Runtime compatibility is unverified for architecture={arch}")
     if (
@@ -106,10 +125,8 @@ def normalize(
         or text is not config
     ):
         unsupported.append("Multimodal/nested text repository: vision/audio/embedding costs are not modeled")
-    if any(
-        text.get(k) for k in ("num_local_experts", "num_experts", "n_routed_experts", "num_experts_per_tok")
-    ):
-        unsupported.append("Mixture-of-experts: total and active parameters require a specialized estimator")
+    if any(text.get(k) for k in ("num_local_experts", "num_experts", "n_routed_experts")) and not is_moe:
+        unsupported.append("Mixture-of-experts config is missing experts-per-token metadata")
     sliding = bool(text.get("sliding_window")) and text.get("use_sliding_window") is not False
     layer_types = text.get("layer_types") or []
     hybrid = any(layer not in {"full_attention", "global_attention"} for layer in layer_types)
@@ -119,13 +136,30 @@ def normalize(
         )
     if any(text.get(k) is not None for k in ("kv_lora_rank", "qk_rope_head_dim", "mamba_d_state", "ssm_cfg")):
         unsupported.append("Alternative KV/state-space representation is unsupported")
+    active_parameters = None
     if parameters:
         prov["parameters"] = Provenance(
             source="Hugging Face safetensors tensor metadata.total", kind="Repository"
         )
-    elif model_type in dense_types and not unsupported:
+    elif model_type in supported_types and not unsupported:
         intermediate, vocab = text.get("intermediate_size"), text.get("vocab_size")
-        if all((layers, heads, hidden, kv, dim, intermediate, vocab)):
+        if is_moe and all((layers, heads, hidden, kv, dim, expert_size, vocab)):
+            tied = text.get("tie_word_embeddings", False)
+            shared_size = text.get("shared_expert_intermediate_size", 0) or 0
+            attention = hidden * heads * dim * 2 + hidden * kv * dim * 2
+            routed = num_experts * 3 * hidden * expert_size
+            shared = 3 * hidden * shared_size
+            router = hidden * num_experts
+            parameters = int(
+                layers * (attention + routed + shared + router + 2 * hidden)
+                + hidden * vocab * (1 if tied else 2)
+                + hidden
+            )
+            prov["parameters"] = Provenance(
+                source="Derived MoE tensor shapes; biases excluded", kind="Derived estimate"
+            )
+            notes.append("Total parameter count is a shape-based MoE estimate, not repository tensor metadata")
+        elif not is_moe and all((layers, heads, hidden, kv, dim, intermediate, vocab)):
             # Llama-style gated MLP + attention + RMSNorm, excludes unknown biases.
             tied = text.get("tie_word_embeddings", False)
             parameters = int(
@@ -138,6 +172,21 @@ def normalize(
                 source="Derived dense gated-MLP tensor shapes; biases excluded", kind="Derived estimate"
             )
             notes.append("Parameter count is a shape-based estimate, not repository tensor metadata")
+    if is_moe and parameters and all((layers, hidden, expert_size)):
+        routed_total = layers * num_experts * 3 * hidden * expert_size
+        routed_active = layers * experts_per_tok * 3 * hidden * expert_size
+        active_parameters = int(parameters - routed_total + routed_active)
+        if active_parameters <= 0 or active_parameters > parameters:
+            active_parameters = None
+            unsupported.append("MoE active-parameter estimate is inconsistent with the total parameter count")
+        else:
+            prov["active_parameters"] = Provenance(
+                source="Total parameters - inactive routed experts (top-k active experts per layer)",
+                kind="Derived estimate",
+            )
+            notes.append(
+                "MoE memory uses all parameters; decode compute and weight bandwidth use active parameters per token"
+            )
     if config.get("auto_map"):
         notes.append(
             "Repository declares custom code; it is never executed. Runtime support needs verification"
@@ -159,7 +208,10 @@ def normalize(
         model_type=model_type,
         architecture=arch,
         parameters=parameters,
-        active_parameters=None if any("Mixture" in s for s in unsupported) else parameters,
+        active_parameters=active_parameters if is_moe else parameters,
+        num_experts=num_experts,
+        num_experts_per_tok=experts_per_tok,
+        expert_intermediate_size=expert_size,
         layers=layers,
         attention_heads=heads,
         kv_heads=kv,
@@ -173,7 +225,7 @@ def normalize(
         notes=notes,
         raw_config=scrub(config),
     )
-    if spec.active_parameters:
+    if spec.active_parameters and not spec.is_moe:
         spec.provenance["active_parameters"] = Provenance(
             source="Dense model: active = total parameters", kind="Derived estimate"
         )
