@@ -17,7 +17,14 @@ from planner.charts import memory_chart, tpot_chart
 from planner.demo import example_model
 from planner.hardware_catalog import CatalogEntry, build_catalog, default_catalog
 from planner.exports import DeploymentDetails, kubernetes_yaml, sizing_report, vllm_command
-from planner.hf_metadata import MetadataError, apply_overrides, fetch_model, normalize, parse_model_id
+from planner.hf_metadata import (
+    MetadataError,
+    apply_overrides,
+    fetch_model,
+    normalize,
+    parse_model_id,
+    search_models,
+)
 from planner.models import Assumptions, Candidate, ModelSpec, Workload
 from planner.presets import presets
 from planner.quick import ADVANCED, DECODE_EFFICIENCY, SIMPLIFIED, quick_table
@@ -154,6 +161,14 @@ def quick_estimate_route(payload: dict):
 @app.get("/api/presets")
 def workload_presets():
     return presets()
+
+
+@app.get("/api/models/search")
+def model_search(q: str = ""):
+    try:
+        return {"results": search_models(q, token=hf_token())}
+    except MetadataError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from None
 
 
 @app.post("/api/metadata")

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from urllib.parse import urlparse
 
 import httpx
@@ -336,3 +337,47 @@ def apply_overrides(model: ModelSpec, overrides: dict) -> ModelSpec:
                 source="Dense active = overridden total", kind="Override"
             ).model_dump()
     return ModelSpec.model_validate(data)
+
+
+PINNED_MODELS = [
+    "Qwen/Qwen3-30B-A3B",
+    "meta-llama/Llama-3.1-8B-Instruct",
+    "meta-llama/Llama-3.1-70B-Instruct",
+    "Qwen/Qwen2.5-7B-Instruct",
+    "mistralai/Mistral-7B-Instruct-v0.3",
+    "openai/gpt-oss-20b",
+    "google/gemma-2-9b-it",
+]
+SEARCH_LIMIT = 20
+_SEARCH_TERM = re.compile(r"[\w .\-/:]{0,100}")
+
+
+def search_models(query: str, token: str | None = None) -> list[dict]:
+    """Search the Hub model list (text-generation, most downloaded first). Pinned models lead.
+
+    The query is a search term only: it is length- and character-limited, sent to the fixed Hub host via
+    the official client, and every returned ID must pass the same identifier validation as direct entry.
+    """
+    query = (query or "").strip()
+    if not _SEARCH_TERM.fullmatch(query):
+        raise MetadataError("Search terms may contain letters, numbers, spaces and . - _ / : only (100 max)")
+    needle = query.lower()
+    pinned = [m for m in PINNED_MODELS if needle in m.lower()]
+    results = [{"id": m, "pinned": True, "downloads": None} for m in pinned]
+    try:
+        found = HfApi(token=token).list_models(
+            search=query or None, filter="text-generation", sort="downloads", limit=SEARCH_LIMIT
+        )
+        for item in found:
+            try:
+                model_id = parse_model_id(item.id)
+            except MetadataError:
+                continue
+            if model_id not in pinned:
+                results.append(
+                    {"id": model_id, "pinned": False, "downloads": getattr(item, "downloads", None)}
+                )
+    except Exception:
+        if not pinned:
+            raise MetadataError("Hub search failed. Check connectivity, or enter a model ID directly.") from None
+    return results[: SEARCH_LIMIT + len(pinned)]

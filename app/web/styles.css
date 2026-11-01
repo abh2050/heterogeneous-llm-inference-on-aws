@@ -3,3 +3,4 @@
 
 .preset-row{display:flex;flex-wrap:wrap;gap:8px;padding:0 4px 4px}
 .cat-input{width:110px;padding:4px 6px;border:1px solid var(--line);border-radius:6px}
+.model-combo{position:relative}.combo-list{position:absolute;z-index:10;left:0;right:0;top:100%;margin:2px 0 0;padding:4px;list-style:none;background:var(--paper);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);max-height:320px;overflow:auto}.combo-item{display:flex;gap:8px;align-items:center;width:100%;padding:8px;border:0;background:none;text-align:left;border-radius:6px}.combo-item:hover,.combo-item:focus{background:var(--teal-soft)}.combo-item small{margin-left:auto;color:var(--muted)}.pin{color:var(--amber)}.combo-empty{padding:8px;color:var(--muted)}

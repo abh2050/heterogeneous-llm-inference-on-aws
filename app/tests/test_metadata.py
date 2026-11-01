@@ -184,3 +184,56 @@ def test_header_metadata_fallback_is_pinned_and_does_not_fetch_weights(monkeypat
 def test_non_object_config_is_actionable():
     with pytest.raises(MetadataError, match="JSON object"):
         normalize("org/model", None, [])
+
+
+def test_model_search_pins_popular_models_validates_ids_and_filters(monkeypatch):
+    from planner.hf_metadata import PINNED_MODELS, search_models
+
+    calls = {}
+
+    class FakeApi:
+        def __init__(self, token=None, **kwargs):
+            calls["token"] = token
+
+        def list_models(self, **kwargs):
+            calls["kwargs"] = kwargs
+            ids = ["org/popular", PINNED_MODELS[0], "bad id with spaces", "https://evil.test/x"]
+            return [SimpleNamespace(id=i, downloads=10 - n) for n, i in enumerate(ids)]
+
+    monkeypatch.setattr("planner.hf_metadata.HfApi", FakeApi)
+    results = search_models("", token="t")
+    assert calls["kwargs"] == {"search": None, "filter": "text-generation", "sort": "downloads", "limit": 20}
+    assert [r["id"] for r in results[: len(PINNED_MODELS)]] == PINNED_MODELS
+    assert all(r["pinned"] for r in results[: len(PINNED_MODELS)])
+    assert [r["id"] for r in results[len(PINNED_MODELS) :]] == ["org/popular"]  # invalid IDs dropped, pin not repeated
+    narrowed = search_models("llama")
+    assert narrowed[0]["pinned"] and all("llama" in r["id"].lower() for r in narrowed if r["pinned"])
+
+
+@pytest.mark.parametrize("term", ["a" * 101, "x; rm -rf", "<script>", "q?x=1&y=2"])
+def test_model_search_rejects_unsafe_terms(term):
+    from planner.hf_metadata import search_models
+
+    with pytest.raises(MetadataError):
+        search_models(term)
+
+
+def test_model_search_route_and_hub_failure_falls_back_to_pins(monkeypatch, tmp_path):
+    from fastapi.testclient import TestClient
+
+    from app import app
+
+    class Down:
+        def __init__(self, **kwargs):
+            pass
+
+        def list_models(self, **kwargs):
+            raise RuntimeError("network down")
+
+    monkeypatch.setattr("planner.hf_metadata.HfApi", Down)
+    monkeypatch.setenv("PLANNER_DB", str(tmp_path / "t.sqlite3"))
+    with TestClient(app) as client:
+        ok = client.get("/api/models/search", params={"q": "qwen"})
+        assert ok.status_code == 200 and ok.json()["results"][0]["id"] == "Qwen/Qwen3-30B-A3B"
+        assert client.get("/api/models/search", params={"q": "zzzz"}).status_code == 422
+        assert client.get("/api/models/search", params={"q": "a;b"}).status_code == 422
