@@ -17,7 +17,28 @@ Open **http://127.0.0.1:8765**. Alternatively run `./run.sh` from any directory.
 
 This is a local, single-user workspace. Keep it bound to loopback. It does not implement a multi-user authentication/authorization boundary. The frontend and vendored Plotly assets are served by the same Python process; Node and a frontend build are unnecessary.
 
-## Five-step workflow
+## Guided page and Advanced section
+
+The home page is a single scrolling, plain-language page: **1** pick a model (searchable Hugging Face dropdown,
+with popular models pinned), **2** pick a job (Chat, Document Q&A, Coding assistant, Agents), **3** set total
+users and the share active together, **4** choose quality versus size (BF16, FP8 default, INT4). Results update
+live: a verdict sentence, memory bar, speed gauge, wait before the first word, monthly cost and cost per million
+tokens next to an editable cloud API price, and a table of every option that fits (green, yellow or red). Below
+that are the software stack for your choices, short explainers, and a glossary. **Start with an example** loads
+Qwen3 30B A3B, Agents, 40 users, Balanced, on a DGX Spark.
+
+Every number carries one label: **measured**, **calculated** or **estimated**, with an info icon. Everything from
+the original five-step workflow below is in the **Advanced** section at the bottom: roofline results (labeled
+*calculated, advanced*), the **Quick estimate (simplified)** panel (*calculated, simplified*), benchmark upload
+and paste, exact precision selectors (weights BF16/FP8/INT4, KV cache BF16/FP8), editable assumptions, the
+hardware catalog, and exports (the `vllm serve` command now includes `--quantization` and `--kv-cache-dtype`).
+
+Other additions: mixture-of-experts sizing (memory uses total parameters, decode uses active parameters),
+`hardware_catalog.json` import with nulls shown as "not published", paste-in benchmark output with a short
+model/hardware/runtime form, and Vercel deployment (see [DEPLOY.md](DEPLOY.md)). The simplified quick-estimate
+formulas are in `planner/quick.py`. See [CHANGELOG.md](CHANGELOG.md) for each step.
+
+## Five-step workflow (Advanced)
 
 1. **Model:** inspect a Hugging Face ID or URL and optional revision. Successful lookups pin a commit SHA, retrieve `config.json` plus available safetensors parameter metadata, and cache the result. Review normalized fields, per-field sources, compatibility notes, and explicit overrides. Local `config.json` inspection is available offline.
 2. **Workload and targets:** set mean/max lengths, optional length percentiles and distribution description, peak RPS, burst multiplier, additional headroom, prefix fraction/length/hit assumptions, p95 TTFT, an explicit TPOT percentile, operating hours, and pricing. Expand serving assumptions to edit efficiencies and reserves.
@@ -31,7 +52,7 @@ The initial Llama 3.1 8B example is **illustrative configuration data**, not a l
 
 ## Credentials
 
-Use a process environment variable named `HF_TOKEN`, or a local secret file selected by `PLANNER_SECRETS_FILE`. Enter credentials locally through your shell/secret manager; do not paste them into chat or source files.
+Use a process environment variable named `HF_TOKEN` (locally, or a Vercel environment variable), or a local secret file selected by `PLANNER_SECRETS_FILE`. Enter credentials locally through your shell/secret manager; do not paste them into chat or source files.
 
 For example, in a local zsh session, `read -s 'HF_TOKEN?HF read token: '` prompts without echoing the value; then `export HF_TOKEN` before starting the server. Restart the server after changing its environment.
 
