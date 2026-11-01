@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "catalog_version": "2026-10-31.1",
+  "description": "Specifications plus editable illustrative deployment-unit prices. GB = 10^9 bytes, GiB = 2^30 bytes. GPU prices must include allocated host/network overhead; defaults are budget placeholders, not quotes.",
+  "hardware": [
+    {
+      "id": "h100-sxm-80", "name": "NVIDIA H100 SXM · 80 GB", "kind": "GPU",
+      "memory_bytes": 80000000000, "bandwidth_gbs": 3350, "dense_bf16_tflops": 989,
+      "allowed_tp": [1, 2, 4, 8], "interconnect_gbs": 450,
+      "topology": "single-node NVLink/NVSwitch; 450 GB/s effective one-way ceiling assumed",
+      "hourly_usd": 3.0, "provider": "Illustrative budget", "region": "unspecified",
+      "price_date": "2026-10-31", "pricing_kind": "Illustrative",
+      "price_scope": "per device plus its allocated host/network share",
+      "source_urls": ["https://www.nvidia.com/en-us/data-center/h100/"],
+      "notes": ["Dense BF16 throughput; no sparsity multiplier. 80 decimal GB is 74.51 GiB.", "TP>1 requires the assumed single-node fabric; verify availability and actual topology."],
+      "fp8_kv": true
+    },
+    {
+      "id": "a100-sxm-80", "name": "NVIDIA A100 SXM · 80 GB", "kind": "GPU",
+      "memory_bytes": 80000000000, "bandwidth_gbs": 2039, "dense_bf16_tflops": 312,
+      "allowed_tp": [1, 2, 4, 8], "interconnect_gbs": 300,
+      "topology": "single-node NVLink/NVSwitch; 300 GB/s effective one-way ceiling assumed",
+      "hourly_usd": 1.8, "provider": "Illustrative budget", "region": "unspecified",
+      "price_date": "2026-10-31", "pricing_kind": "Illustrative",
+      "price_scope": "per device plus its allocated host/network share",
+      "source_urls": ["https://resources.nvidia.com/en-us-gpu/nvidia-a100-datashee-1"],
+      "notes": ["Dense BF16 312 TFLOP/s; no sparsity multiplier. Fabric throughput is an assumption."],
+      "fp8_kv": false
+    },
+    {
+      "id": "l4-24", "name": "NVIDIA L4 · 24 GB", "kind": "GPU",
+      "memory_bytes": 24000000000, "bandwidth_gbs": 300, "dense_bf16_tflops": 121,
+      "allowed_tp": [1], "interconnect_gbs": 0, "topology": "one PCIe device per replica",
+      "hourly_usd": 0.8048, "provider": "Study-guide budget", "region": "us-east-2",
+      "price_date": "2026-10-31", "pricing_kind": "Illustrative",
+      "price_scope": "one g6.xlarge host, one GPU (price transcribed from original study guide, not re-quoted)",
+      "source_urls": ["https://www.nvidia.com/en-us/data-center/l4/", "docs/existing-study-guide.md"],
+      "notes": ["242 sparse BF16 TFLOP/s is halved to the 121 dense ceiling.", "No multi-device L4 topology is assumed."],
+      "fp8_kv": true
+    },
+    {
+      "id": "c7i-4xlarge", "name": "Intel Sapphire Rapids · 8 physical cores", "kind": "CPU",
+      "memory_bytes": 34359738368, "bandwidth_gbs": 45, "dense_bf16_tflops": 25,
+      "allowed_tp": [1], "interconnect_gbs": 0, "topology": "one c7i.4xlarge; 8 physical cores / 16 vCPU",
+      "hourly_usd": 0.714, "provider": "Study-guide budget", "region": "us-east-2",
+      "price_date": "2026-10-31", "pricing_kind": "Illustrative",
+      "price_scope": "whole c7i.4xlarge instance",
+      "source_urls": ["docs/existing-study-guide.md", "https://docs.vllm.ai/en/v0.10.2/getting_started/installation/cpu.html"],
+      "notes": ["25 BF16 TFLOP/s and 45 GB/s are unmeasured study-guide assumptions, not vendor guaranteed per-VM specs.", "Requires x86 AMX BF16 CPU build; leave CPU/memory for the API server and OS."],
+      "fp8_kv": false
+    }
+  ]
+}

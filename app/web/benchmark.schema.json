@@ -1,0 +1,582 @@
+{
+  "$defs": {
+    "BenchmarkConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "model_id": {
+          "title": "Model Id",
+          "type": "string"
+        },
+        "revision": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Revision"
+        },
+        "architecture": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Architecture"
+        },
+        "hardware_id": {
+          "title": "Hardware Id",
+          "type": "string"
+        },
+        "hardware_count": {
+          "minimum": 1,
+          "title": "Hardware Count",
+          "type": "integer"
+        },
+        "topology": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Topology"
+        },
+        "engine": {
+          "title": "Engine",
+          "type": "string"
+        },
+        "engine_version": {
+          "title": "Engine Version",
+          "type": "string"
+        },
+        "launch_config": {
+          "additionalProperties": true,
+          "title": "Launch Config",
+          "type": "object"
+        },
+        "weight_dtype": {
+          "title": "Weight Dtype",
+          "type": "string"
+        },
+        "weight_bytes": {
+          "exclusiveMinimum": 0,
+          "title": "Weight Bytes",
+          "type": "number"
+        },
+        "quantization": {
+          "additionalProperties": true,
+          "title": "Quantization",
+          "type": "object"
+        },
+        "activation_dtype": {
+          "title": "Activation Dtype",
+          "type": "string"
+        },
+        "kv_dtype": {
+          "title": "Kv Dtype",
+          "type": "string"
+        },
+        "tp": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Tp",
+          "type": "integer"
+        },
+        "replicas": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Replicas",
+          "type": "integer"
+        },
+        "max_sequences": {
+          "minimum": 1,
+          "title": "Max Sequences",
+          "type": "integer"
+        },
+        "max_model_len": {
+          "minimum": 1,
+          "title": "Max Model Len",
+          "type": "integer"
+        },
+        "max_batched_tokens": {
+          "minimum": 1,
+          "title": "Max Batched Tokens",
+          "type": "integer"
+        },
+        "memory_utilization": {
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "title": "Memory Utilization",
+          "type": "number"
+        },
+        "chunked_prefill": {
+          "title": "Chunked Prefill",
+          "type": "boolean"
+        },
+        "prefix_caching": {
+          "title": "Prefix Caching",
+          "type": "boolean"
+        },
+        "observed_prefix_hit_rate": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Observed Prefix Hit Rate"
+        }
+      },
+      "required": [
+        "model_id",
+        "hardware_id",
+        "hardware_count",
+        "engine",
+        "engine_version",
+        "weight_dtype",
+        "weight_bytes",
+        "activation_dtype",
+        "kv_dtype",
+        "max_sequences",
+        "max_model_len",
+        "max_batched_tokens",
+        "memory_utilization",
+        "chunked_prefill",
+        "prefix_caching"
+      ],
+      "title": "BenchmarkConfig",
+      "type": "object"
+    },
+    "BenchmarkMetrics": {
+      "additionalProperties": false,
+      "properties": {
+        "ttft_s": {
+          "$ref": "#/$defs/Percentiles"
+        },
+        "tpot_s": {
+          "$ref": "#/$defs/Percentiles"
+        },
+        "itl_s": {
+          "$ref": "#/$defs/Percentiles"
+        },
+        "e2e_s": {
+          "$ref": "#/$defs/Percentiles"
+        },
+        "request_throughput_rps": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Request Throughput Rps"
+        },
+        "input_throughput_tps": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Input Throughput Tps"
+        },
+        "output_throughput_tps": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Output Throughput Tps"
+        },
+        "errors": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Errors"
+        },
+        "timeouts": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timeouts"
+        }
+      },
+      "title": "BenchmarkMetrics",
+      "type": "object"
+    },
+    "Percentiles": {
+      "additionalProperties": false,
+      "properties": {
+        "mean": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mean"
+        },
+        "p50": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "P50"
+        },
+        "p90": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "P90"
+        },
+        "p95": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "P95"
+        },
+        "p99": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "P99"
+        }
+      },
+      "title": "Percentiles",
+      "type": "object"
+    },
+    "Workload": {
+      "additionalProperties": false,
+      "properties": {
+        "input_avg": {
+          "default": 2048,
+          "minimum": 1,
+          "title": "Input Avg",
+          "type": "integer"
+        },
+        "input_max": {
+          "default": 4096,
+          "minimum": 1,
+          "title": "Input Max",
+          "type": "integer"
+        },
+        "output_avg": {
+          "default": 256,
+          "minimum": 2,
+          "title": "Output Avg",
+          "type": "integer"
+        },
+        "output_max": {
+          "default": 512,
+          "minimum": 2,
+          "title": "Output Max",
+          "type": "integer"
+        },
+        "input_percentiles": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Input Percentiles",
+          "type": "object"
+        },
+        "output_percentiles": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Output Percentiles",
+          "type": "object"
+        },
+        "distribution_notes": {
+          "default": "Fixed synthetic lengths; production distribution unknown",
+          "title": "Distribution Notes",
+          "type": "string"
+        },
+        "peak_rps": {
+          "default": 2.0,
+          "exclusiveMinimum": 0,
+          "title": "Peak Rps",
+          "type": "number"
+        },
+        "burst_factor": {
+          "default": 1.2,
+          "minimum": 1,
+          "title": "Burst Factor",
+          "type": "number"
+        },
+        "headroom": {
+          "default": 0.25,
+          "maximum": 2,
+          "minimum": 0,
+          "title": "Headroom",
+          "type": "number"
+        },
+        "prefix_fraction": {
+          "default": 0,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Prefix Fraction",
+          "type": "number"
+        },
+        "prefix_length": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Prefix Length",
+          "type": "integer"
+        },
+        "prefix_hit_rate": {
+          "default": 0,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Prefix Hit Rate",
+          "type": "number"
+        },
+        "retained_prefixes": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Retained Prefixes",
+          "type": "integer"
+        },
+        "ttft_p95_s": {
+          "default": 1.0,
+          "exclusiveMinimum": 0,
+          "title": "Ttft P95 S",
+          "type": "number"
+        },
+        "tpot_s": {
+          "default": 0.05,
+          "exclusiveMinimum": 0,
+          "title": "Tpot S",
+          "type": "number"
+        },
+        "tpot_percentile": {
+          "default": "p95",
+          "enum": [
+            "p50",
+            "p90",
+            "p95",
+            "p99"
+          ],
+          "title": "Tpot Percentile",
+          "type": "string"
+        },
+        "operating_hours": {
+          "default": 730,
+          "exclusiveMinimum": 0,
+          "maximum": 8784,
+          "title": "Operating Hours",
+          "type": "number"
+        }
+      },
+      "title": "Workload",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "run_id": {
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    },
+    "timestamp": {
+      "format": "date-time",
+      "title": "Timestamp",
+      "type": "string"
+    },
+    "source": {
+      "title": "Source",
+      "type": "string"
+    },
+    "raw_result_reference": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Raw Result Reference"
+    },
+    "config": {
+      "$ref": "#/$defs/BenchmarkConfig"
+    },
+    "workload": {
+      "$ref": "#/$defs/Workload"
+    },
+    "concurrency": {
+      "minimum": 1,
+      "title": "Concurrency",
+      "type": "integer"
+    },
+    "request_rate_rps": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Request Rate Rps"
+    },
+    "load_mode": {
+      "default": "unknown",
+      "enum": [
+        "open_loop",
+        "closed_loop",
+        "unknown"
+      ],
+      "title": "Load Mode",
+      "type": "string"
+    },
+    "warmup_s": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Warmup S"
+    },
+    "duration_s": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Duration S"
+    },
+    "sample_count": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Sample Count"
+    },
+    "metrics": {
+      "$ref": "#/$defs/BenchmarkMetrics"
+    },
+    "metric_definitions": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Metric Definitions",
+      "type": "object"
+    },
+    "raw_result": {
+      "additionalProperties": true,
+      "title": "Raw Result",
+      "type": "object"
+    }
+  },
+  "required": [
+    "run_id",
+    "timestamp",
+    "source",
+    "config",
+    "workload",
+    "concurrency",
+    "metrics"
+  ],
+  "title": "BenchmarkRecord",
+  "type": "object"
+}
