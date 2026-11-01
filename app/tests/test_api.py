@@ -26,7 +26,8 @@ def test_browser_shell_bootstrap_compare_and_export(client):
     result = client.post("/api/compare", json=p)
     assert result.status_code == 200
     data = result.json()
-    assert len(data["candidates"]) == 80
+    expected = sum(len(h["allowed_tp"]) for h in p["hardware"]) * 8
+    assert len(data["candidates"]) == expected
     assert data["candidates"][0]["feasible"]
     assert data["candidates"][0]["evidence"] == "Estimated"
     assert len(data["chart"]["data"]) > 0

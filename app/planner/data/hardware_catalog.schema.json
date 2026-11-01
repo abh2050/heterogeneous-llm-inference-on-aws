@@ -1,0 +1,250 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "items": {
+    "additionalProperties": false,
+    "properties": {
+      "bf16_tflops_dense": {
+        "anyOf": [
+          {
+            "exclusiveMinimum": 0,
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Bf16 Tflops Dense"
+      },
+      "category": {
+        "enum": [
+          "datacenter_gpu",
+          "workstation_gpu",
+          "desktop_appliance",
+          "multi_gpu_system",
+          "cpu",
+          "accelerator"
+        ],
+        "title": "Category",
+        "type": "string"
+      },
+      "cloud_hourly_usd": {
+        "anyOf": [
+          {
+            "minimum": 0,
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Cloud Hourly Usd"
+      },
+      "compute_platform": {
+        "enum": [
+          "CUDA",
+          "ROCm",
+          "oneAPI",
+          "Metal"
+        ],
+        "title": "Compute Platform",
+        "type": "string"
+      },
+      "confidence": {
+        "enum": [
+          "high",
+          "medium",
+          "low"
+        ],
+        "title": "Confidence",
+        "type": "string"
+      },
+      "cooling": {
+        "enum": [
+          "air",
+          "liquid",
+          "either"
+        ],
+        "title": "Cooling",
+        "type": "string"
+      },
+      "form_factor": {
+        "title": "Form Factor",
+        "type": "string"
+      },
+      "fp4_tflops_dense": {
+        "anyOf": [
+          {
+            "exclusiveMinimum": 0,
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Fp4 Tflops Dense"
+      },
+      "fp8_tflops_dense": {
+        "anyOf": [
+          {
+            "exclusiveMinimum": 0,
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Fp8 Tflops Dense"
+      },
+      "gpu_count": {
+        "minimum": 1,
+        "title": "Gpu Count",
+        "type": "integer"
+      },
+      "id": {
+        "title": "Id",
+        "type": "string"
+      },
+      "interconnect": {
+        "title": "Interconnect",
+        "type": "string"
+      },
+      "interconnect_gb_s": {
+        "anyOf": [
+          {
+            "exclusiveMinimum": 0,
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Interconnect Gb S"
+      },
+      "list_price_usd": {
+        "anyOf": [
+          {
+            "minimum": 0,
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "List Price Usd"
+      },
+      "memory_bandwidth_gb_s": {
+        "anyOf": [
+          {
+            "exclusiveMinimum": 0,
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Memory Bandwidth Gb S"
+      },
+      "memory_gb": {
+        "anyOf": [
+          {
+            "exclusiveMinimum": 0,
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Memory Gb"
+      },
+      "memory_type": {
+        "title": "Memory Type",
+        "type": "string"
+      },
+      "name": {
+        "title": "Name",
+        "type": "string"
+      },
+      "notes": {
+        "title": "Notes",
+        "type": "string"
+      },
+      "power_w": {
+        "exclusiveMinimum": 0,
+        "title": "Power W",
+        "type": "number"
+      },
+      "price_type": {
+        "enum": [
+          "MSRP",
+          "street",
+          "estimate"
+        ],
+        "title": "Price Type",
+        "type": "string"
+      },
+      "release_year": {
+        "minimum": 2000,
+        "title": "Release Year",
+        "type": "integer"
+      },
+      "serving_engines": {
+        "items": {
+          "type": "string"
+        },
+        "title": "Serving Engines",
+        "type": "array"
+      },
+      "sources": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "title": "Sources",
+        "type": "object"
+      },
+      "status": {
+        "enum": [
+          "shipping",
+          "announced"
+        ],
+        "title": "Status",
+        "type": "string"
+      },
+      "vendor": {
+        "title": "Vendor",
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "vendor",
+      "name",
+      "category",
+      "memory_gb",
+      "memory_type",
+      "memory_bandwidth_gb_s",
+      "bf16_tflops_dense",
+      "fp8_tflops_dense",
+      "fp4_tflops_dense",
+      "gpu_count",
+      "interconnect",
+      "interconnect_gb_s",
+      "power_w",
+      "cooling",
+      "form_factor",
+      "list_price_usd",
+      "price_type",
+      "cloud_hourly_usd",
+      "compute_platform",
+      "serving_engines",
+      "status",
+      "release_year",
+      "sources",
+      "confidence",
+      "notes"
+    ],
+    "title": "CatalogEntry",
+    "type": "object"
+  },
+  "title": "hardware_catalog.json",
+  "type": "array"
+}

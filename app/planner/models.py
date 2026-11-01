@@ -200,6 +200,16 @@ class Hardware(Record):
     source_urls: list[str]
     notes: list[str] = Field(default_factory=list)
     fp8_kv: bool = False
+    # Optional catalog metadata (hardware_catalog.json); absent for the built-in entries.
+    vendor: str | None = None
+    category: str | None = None
+    compute_platform: str | None = None
+    serving_engines: list[str] = Field(default_factory=list)
+    confidence: str | None = None
+    list_price_usd: float | None = Field(default=None, ge=0)
+    field_sources: dict[str, str] = Field(default_factory=dict)
+    # Editable prefill speed; None means "estimate from bf16 TFLOPS" (see hardware_catalog.estimate_prefill_tps).
+    prefill_tokens_per_second: float | None = Field(default=None, gt=0)
 
 
 class Candidate(Record):

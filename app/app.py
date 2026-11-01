@@ -13,9 +13,9 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 
 from planner.benchmark import build_run_context, import_normalized, import_vllm_result, load_adapter
-from planner.catalog import load_catalog
 from planner.charts import memory_chart, tpot_chart
 from planner.demo import example_model
+from planner.hardware_catalog import CatalogEntry, build_catalog, default_catalog
 from planner.exports import DeploymentDetails, kubernetes_yaml, sizing_report, vllm_command
 from planner.hf_metadata import MetadataError, apply_overrides, fetch_model, normalize, parse_model_id
 from planner.models import Assumptions, Candidate, ModelSpec, Workload
@@ -95,6 +95,7 @@ def health():
 @app.get("/api/bootstrap")
 def bootstrap():
     db = store()
+    catalog = default_catalog()
     try:
         caps = load_adapter().capabilities().model_dump()
     except ValueError:
@@ -107,7 +108,9 @@ def bootstrap():
         "model": example_model(),
         "workload": Workload(),
         "assumptions": Assumptions(),
-        "hardware": load_catalog(),
+        "hardware": catalog["hardware"],
+        "hardware_catalog": catalog["records"],
+        "builtin_kept": catalog["kept_builtin"],
         "scenarios": list(db.scenarios()),
         "benchmark_count": len(db.benchmarks()),
         "capabilities": caps,
@@ -115,6 +118,16 @@ def bootstrap():
         "catalog_version": "2026-10-31.1",
         "presets": presets(),
     }
+
+
+@app.post("/api/catalog/convert")
+def convert_catalog(payload: dict):
+    """Validate user-edited catalog records and convert them to planner hardware."""
+    rows = payload.get("entries")
+    if not isinstance(rows, list) or not 1 <= len(rows) <= 60:
+        raise ValueError("entries must be a list of 1 to 60 catalog records")
+    entries = [CatalogEntry.model_validate({k: v for k, v in r.items() if k not in {"usable", "missing"}}) for r in rows]
+    return build_catalog(entries, builtin=[])
 
 
 @app.get("/api/presets")
