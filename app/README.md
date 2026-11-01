@@ -2,7 +2,7 @@
 
 A working browser application for inference capacity planning: a responsive HTML/CSS/JavaScript frontend, a Python/FastAPI backend, Plotly charts, Pydantic validation, and SQLite history. There is no Streamlit dependency and no model inference or replacement benchmark engine.
 
-The original project contained only a heterogeneous-inference study guide. It is preserved at [docs/existing-study-guide.md](docs/existing-study-guide.md). No existing benchmark-service implementation, API contract, or sample response was present.
+The original project contained only a heterogeneous-inference study guide. It is the root [README](../README.md) of this repository. No existing benchmark-service implementation, API contract, or sample response was present.
 
 ## Run
 

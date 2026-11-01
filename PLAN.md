@@ -4,7 +4,7 @@
 User pasted a 7-phase runbook (Mac control node + g6.xlarge L4 GPU node + c7i.4xlarge CPU node, Qwen2.5-1.5B, LiteLLM router) answering 5 questions: HF vs vLLM speedup, SLO capacity per node, $/1M output tokens, memory/concurrency tuning, and whether CPU offload of background RAG traffic lowers GPU tail latency. User chose to run it end to end. Starting state: `~/vllm-hetero` and `~/.ssh/config` do not exist; aws, jq, docker are installed. Budget ≈ $12–14.
 
 ## Step 0 (first, before any AWS work): write the learning README
-Create `README.md` in the workspace (`/Users/abhishekshah/Desktop/inference\`), written as a study guide for the user. For each concept: what it is, why it matters here, which phase/question measures it, and a **"predict before you measure"** prompt with a back-of-envelope number to check against results.
+Create `README.md` in the workspace (repository root), written as a study guide for the user. For each concept: what it is, why it matters here, which phase/question measures it, and a **"predict before you measure"** prompt with a back-of-envelope number to check against results.
 
 Sections:
 1. **How LLM inference works**: tokens, autoregressive decode, prefill (compute-bound) vs decode (memory-bandwidth-bound). Roofline estimate: L4 ~300 GB/s ÷ ~3.1 GB bf16 weights ≈ ~95 tok/s ceiling per sequence at batch 1 (why batching is the whole game).

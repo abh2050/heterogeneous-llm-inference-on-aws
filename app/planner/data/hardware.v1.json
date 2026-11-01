@@ -34,7 +34,7 @@
       "hourly_usd": 0.8048, "provider": "Study-guide budget", "region": "us-east-2",
       "price_date": "2026-10-31", "pricing_kind": "Illustrative",
       "price_scope": "one g6.xlarge host, one GPU (price transcribed from original study guide, not re-quoted)",
-      "source_urls": ["https://www.nvidia.com/en-us/data-center/l4/", "docs/existing-study-guide.md"],
+      "source_urls": ["https://www.nvidia.com/en-us/data-center/l4/", "../README.md"],
       "notes": ["242 sparse BF16 TFLOP/s is halved to the 121 dense ceiling.", "No multi-device L4 topology is assumed."],
       "fp8_kv": true
     },
@@ -45,7 +45,7 @@
       "hourly_usd": 0.714, "provider": "Study-guide budget", "region": "us-east-2",
       "price_date": "2026-10-31", "pricing_kind": "Illustrative",
       "price_scope": "whole c7i.4xlarge instance",
-      "source_urls": ["docs/existing-study-guide.md", "https://docs.vllm.ai/en/v0.10.2/getting_started/installation/cpu.html"],
+      "source_urls": ["../README.md", "https://docs.vllm.ai/en/v0.10.2/getting_started/installation/cpu.html"],
       "notes": ["25 BF16 TFLOP/s and 45 GB/s are unmeasured study-guide assumptions, not vendor guaranteed per-VM specs.", "Requires x86 AMX BF16 CPU build; leave CPU/memory for the API server and OS."],
       "fp8_kv": false
     }

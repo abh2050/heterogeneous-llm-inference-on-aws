@@ -2,7 +2,7 @@
 
 ## Discovered project contract
 
-The original workspace contained a study guide discussing `vllm bench serve`, LiteLLM, Prometheus, an L4 and a CPU instance. It contained no service implementation, endpoint definitions, OpenAPI file, service authentication scheme, or actual result JSON. The preserved guide is `docs/existing-study-guide.md`.
+The original workspace contained a study guide discussing `vllm bench serve`, LiteLLM, Prometheus, an L4 and a CPU instance. It contained no service implementation, endpoint definitions, OpenAPI file, service authentication scheme, or actual result JSON. The guide is the repository root `README.md`.
 
 Accordingly, direct integration is **unconfigured**. No endpoint names are guessed, no requests are sent to a fabricated base URL, and no benchmark engine is implemented. HF credentials are unrelated to benchmark-service credentials.
 
