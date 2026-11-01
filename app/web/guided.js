@@ -313,7 +313,7 @@ document.addEventListener('submit', async (event) => {
       const out = await api('catalog/convert', {entries: rec});
       const ids = new Set(rec.map(r => r.id));
       state.hardware = [...state.hardware.filter(h => !ids.has(h.id)), ...out.hardware]; state.hardware_catalog = out.records;
-      await applyGuided();
+      await persistHardware(); await applyGuided();
     } catch (e) {toast(e.message, true);}
   }
 }, true);

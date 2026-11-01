@@ -14,6 +14,8 @@ class PlanningRequest(Record):
     concurrencies: list[int] = Field(
         default_factory=lambda: [1, 2, 4, 8, 16, 32, 64, 128], min_length=1, max_length=20
     )
+    # Client-held benchmark records (browser storage in vercel mode); None means use the server's store.
+    benchmarks: list[dict] | None = Field(default=None, max_length=1000)
 
 
 def sweep_concurrencies(request: PlanningRequest) -> list[int]:

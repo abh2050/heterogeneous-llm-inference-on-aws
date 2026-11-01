@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="/static/styles.css">
   <link rel="stylesheet" href="/static/guided.css">
   <script defer src="/static/vendor/plotly.min.js"></script>
+  <script defer src="/static/storage.js"></script>
   <script defer src="/static/app.js"></script>
   <script defer src="/static/guided.js"></script>
 </head>
@@ -72,7 +73,7 @@
     <div class="sidebar-foot">Built for decisions. Grounded in evidence.</div>
   </aside>
   <div class="workspace">
-    <header class="topbar"><div><span class="crumb">Workspace</span><span class="slash">/</span><span id="breadcrumb">Model inspection</span></div><div class="topbar-right"><span class="version-label">ESTIMATOR v0.1</span><button class="button small" data-action="save-scenario">Save scenario</button></div></header>
+    <header class="topbar"><div><span class="crumb">Workspace</span><span class="slash">/</span><span id="breadcrumb">Model inspection</span></div><div class="topbar-right"><span class="version-label">ESTIMATOR v0.1</span><button class="button small" data-action="export-data" hidden title="Download scenarios, benchmarks and hardware edits stored in this browser">Export my data</button><button class="button small" data-action="import-data" hidden title="Load a previously exported file">Import data</button><input id="import-data-file" type="file" accept="application/json,.json" hidden><button class="button small" data-action="save-scenario">Save scenario</button></div></header>
     <div id="context-bar" class="context-bar"></div>
     <main id="main" tabindex="-1"><div class="loading-state"><div class="spinner"></div><h1>Opening your workspace</h1><p>Loading model assumptions and hardware profiles…</p></div></main>
     <footer><span>Inference Atlas <span class="muted">/</span> Capacity planning</span><span>Estimates guide testing. Measurements establish evidence.</span></footer>

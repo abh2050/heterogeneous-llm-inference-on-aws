@@ -12,7 +12,14 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 
-from planner.benchmark import build_run_context, import_normalized, import_vllm_result, load_adapter
+from planner.benchmark import (
+    Capabilities,
+    UnconfiguredAdapter,
+    build_run_context,
+    import_normalized,
+    import_vllm_result,
+    load_adapter,
+)
 from planner.charts import memory_chart, tpot_chart
 from planner.demo import example_model
 from planner.hardware_catalog import CatalogEntry, build_catalog, default_catalog
@@ -25,7 +32,8 @@ from planner.hf_metadata import (
     parse_model_id,
     search_models,
 )
-from planner.models import Assumptions, Candidate, ModelSpec, Workload
+from planner.mode import VERCEL_CACHE, is_vercel, storage_mode
+from planner.models import Assumptions, BenchmarkRecord, Candidate, ModelSpec, Workload
 from planner.paste import classify, context_defaults, short_context
 from planner.presets import presets
 from planner.quick import ADVANCED, DECODE_EFFICIENCY, SIMPLIFIED, quick_table
@@ -39,7 +47,25 @@ app = FastAPI(title="Inference Atlas", version="0.1.0", docs_url="/api/docs", re
 
 
 def store():
-    return Store()
+    # Vercel: a disposable model-metadata cache in /tmp; nothing else is ever persisted server-side.
+    return Store(VERCEL_CACHE) if is_vercel() else Store()
+
+
+def adapter():
+    """External benchmark service adapter; disabled in vercel mode."""
+    return UnconfiguredAdapter() if is_vercel() else load_adapter()
+
+
+def require_local(feature: str):
+    if is_vercel():
+        raise ValueError(f"{feature} is disabled in Vercel mode (stateless server).")
+
+
+def runs_for(request: PlanningRequest) -> list[BenchmarkRecord]:
+    """Benchmarks come from the request when the client holds them, else from the local store."""
+    if request.benchmarks is not None:
+        return [BenchmarkRecord.model_validate(scrub(r)) for r in request.benchmarks]
+    return [] if is_vercel() else store().benchmarks()
 
 
 def hf_token():
@@ -104,10 +130,17 @@ def health():
 
 @app.get("/api/bootstrap")
 def bootstrap():
-    db = store()
     catalog = default_catalog()
+    db = None if is_vercel() else store()
     try:
-        caps = load_adapter().capabilities().model_dump()
+        caps = (
+            Capabilities(
+                service_name="External benchmark service disabled on Vercel",
+                notes=["Paste or import results; they are stored in this browser."],
+            )
+            if is_vercel()
+            else load_adapter().capabilities()
+        ).model_dump()
     except ValueError:
         caps = {
             "configured": False,
@@ -121,8 +154,9 @@ def bootstrap():
         "hardware": catalog["hardware"],
         "hardware_catalog": catalog["records"],
         "builtin_kept": catalog["kept_builtin"],
-        "scenarios": list(db.scenarios()),
-        "benchmark_count": len(db.benchmarks()),
+        "scenarios": [] if db is None else list(db.scenarios()),
+        "benchmark_count": 0 if db is None else len(db.benchmarks()),
+        "storage_mode": storage_mode(),
         "capabilities": caps,
         "hf_token_configured": bool(hf_token()),
         "catalog_version": "2026-10-31.1",
@@ -208,7 +242,7 @@ def override(payload: dict):
 
 @app.post("/api/compare")
 def comparison(request: PlanningRequest):
-    runs = store().benchmarks()
+    runs = runs_for(request)
     candidates = compare(request, runs)
     return {
         "candidates": candidates,
@@ -228,7 +262,7 @@ def memory(payload: dict):
 
 @app.get("/api/benchmarks")
 def history():
-    return store().benchmarks()
+    return [] if is_vercel() else store().benchmarks()
 
 
 @app.post("/api/benchmarks/import")
@@ -237,15 +271,12 @@ def import_results(payload: dict):
         records = [import_vllm_result(payload["data"], payload["context"])]
     else:
         records = import_normalized(payload["data"])
-    db = store()
-    db.add_benchmarks(records)
-    return {"imported": len(records), "run_ids": [r.run_id for r in records]}
+    return persist_runs(records)
 
 
 @app.post("/api/benchmarks/paste")
 def paste_results(payload: dict):
     kind, data = classify(payload.get("text") or "")
-    db = store()
     if kind == "normalized":
         records = import_normalized(data)
     else:
@@ -254,13 +285,21 @@ def paste_results(payload: dict):
         if not form:
             return {"needs_context": True, "defaults": context_defaults(plan, data)}
         records = [import_vllm_result(data, short_context(plan, form))]
-    db.add_benchmarks(records)
-    return {"imported": len(records), "run_ids": [r.run_id for r in records], "needs_context": False}
+    return {**persist_runs(records), "needs_context": False}
+
+
+def persist_runs(records: list[BenchmarkRecord]) -> dict:
+    """Local mode stores to SQLite; vercel mode returns the records for the browser to keep."""
+    result = {"imported": len(records), "run_ids": [r.run_id for r in records]}
+    if is_vercel():
+        return {**result, "records": [r.model_dump(mode="json") for r in records]}
+    store().add_benchmarks(records)
+    return result
 
 
 def candidate_from(payload: dict):
     request = PlanningRequest.model_validate(payload["plan"])
-    candidates = compare(request, store().benchmarks())
+    candidates = compare(request, runs_for(request))
     c = next((c for c in candidates if c.id == payload["candidate_id"]), None)
     if c is None:
         raise ValueError("Candidate is no longer in the current comparison")
@@ -278,45 +317,48 @@ def run_context(payload: dict):
 
 @app.get("/api/benchmark/capabilities")
 def capabilities():
-    return load_adapter().capabilities()
+    return adapter().capabilities()
 
 
 @app.post("/api/benchmark/health")
 def benchmark_health():
-    adapter = load_adapter()
-    if not adapter.capabilities().health:
+    require_local("The external benchmark service")
+    svc = adapter()
+    if not svc.capabilities().health:
         raise ValueError("Health endpoint is not configured by a service adapter")
-    return scrub(adapter.health())
+    return scrub(svc.health())
 
 
 @app.post("/api/benchmark/submit")
 def submit(payload: dict):
-    adapter = load_adapter()
-    if not adapter.capabilities().submit:
+    require_local("The external benchmark service")
+    svc = adapter()
+    if not svc.capabilities().submit:
         raise ValueError(
             "Benchmark submission is unconfigured; use JSON import or provide a real service adapter"
         )
     context = run_context(payload)
-    job = adapter.submit(context)
+    job = svc.submit(context)
     store().save_job(job.job_id, {"state": job.model_dump(), "context": context})
     return job
 
 
 @app.get("/api/benchmark/jobs")
 def jobs():
-    return store().jobs()
+    return {} if is_vercel() else store().jobs()
 
 
 @app.post("/api/benchmark/job/{action}")
 def job_action(action: str, payload: dict):
-    adapter = load_adapter()
+    require_local("The external benchmark service")
+    svc = adapter()
     job_id = payload.get("job_id")
     if not isinstance(job_id, str) or job_id not in store().jobs():
         raise ValueError("Select a recorded service job")
-    caps = adapter.capabilities()
+    caps = svc.capabilities()
     if action not in {"poll", "results", "cancel"} or not getattr(caps, action):
         raise ValueError("Requested job operation is not supported by this service")
-    result = getattr(adapter, action)(job_id)
+    result = getattr(svc, action)(job_id)
     if action == "results":
         records = [r if hasattr(r, "metrics") else import_normalized(r)[0] for r in result]
         store().add_benchmarks(records)
@@ -329,15 +371,16 @@ def job_action(action: str, payload: dict):
 
 @app.get("/api/scenarios")
 def scenarios():
-    return store().scenarios()
+    return {} if is_vercel() else store().scenarios()
 
 
 @app.post("/api/scenarios")
 def save_scenario(payload: dict):
     plan = PlanningRequest.model_validate(payload["plan"])
-    store().save_scenario(
-        payload["name"], {"plan": plan.model_dump(mode="json"), "candidate_id": payload.get("candidate_id")}
-    )
+    scenario = {"plan": plan.model_dump(mode="json", exclude={"benchmarks"}), "candidate_id": payload.get("candidate_id")}
+    if is_vercel():
+        return {"saved": True, "name": payload["name"], "scenario": scenario}  # the browser keeps it
+    store().save_scenario(payload["name"], scenario)
     return {"saved": True}
 
 
@@ -346,7 +389,7 @@ def export(payload: dict):
     request, c, h = candidate_from(payload)
     command = vllm_command(request.model, h, c, request.workload, request.assumptions)
     report = sizing_report(
-        request.model, h, c, request.workload, request.assumptions, store().benchmarks(), command
+        request.model, h, c, request.workload, request.assumptions, runs_for(request), command
     )
     return {"serving": command, "report": report}
 
@@ -368,9 +411,11 @@ def disaggregation(payload: dict):
     return compare_disaggregated(request.model, prefill, h, request.workload, request.assumptions, c, data)
 
 
-@app.get("/")
-def index():
-    return FileResponse(ROOT / "web/index.html")
+# On Vercel the CDN serves web/ directly; the function may not bundle it, so serve it here only if present.
+if (ROOT / "web").is_dir():
 
+    @app.get("/")
+    def index():
+        return FileResponse(ROOT / "web/index.html")
 
-app.mount("/static", StaticFiles(directory=ROOT / "web"), name="static")
+    app.mount("/static", StaticFiles(directory=ROOT / "web"), name="static")

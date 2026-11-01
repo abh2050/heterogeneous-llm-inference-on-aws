@@ -25,7 +25,18 @@ function heading(title, subtitle) {return `<div class="page-heading"><div><div c
 function next(page, text, note) {return `<div class="next-step"><p>${note}</p><button class="button primary" data-action="navigate" data-page="${page}">${text}<span>→</span></button></div>`;}
 function selected() {return state.candidates.find(c => c.id === state.selectedId);}
 function hw(id) {return state.hardware.find(h => h.id === id);}
-function plan() {return {model:state.model, workload:state.workload, assumptions:state.assumptions, hardware:state.hardware};}
+const isVercel = () => state.storage_mode === 'vercel';
+function plan() {const p = {model:state.model, workload:state.workload, assumptions:state.assumptions, hardware:state.hardware}; if (isVercel()) p.benchmarks = state.runs; return p;}
+async function loadRuns() {return isVercel() ? Object.values(await Atlas.entries('benchmarks')) : api('benchmarks');}
+async function keepRuns(records) {if (isVercel()) for (const r of records || []) await Atlas.put('benchmarks', r.run_id, r);}
+async function loadScenarios() {return isVercel() ? Atlas.entries('scenarios') : api('scenarios');}
+async function persistHardware() {if (isVercel()) await Atlas.put('hardware', 'catalog', {hardware: state.hardware, hardware_catalog: state.hardware_catalog});}
+async function restoreBrowserData() {
+  state.runs = await loadRuns(); state.scenarios = await loadScenarios();
+  const saved = await Atlas.get('hardware', 'catalog');
+  if (saved) {const ids = new Set(saved.hardware.map(h => h.id)); state.hardware = [...state.hardware.filter(h => !ids.has(h.id)), ...saved.hardware]; state.hardware_catalog = saved.hardware_catalog;}
+  for (const id of ['export-data', 'import-data']) document.querySelector(`[data-action="${id}"]`)?.removeAttribute('hidden');
+}
 function candidatePayload() {return {plan:plan(), candidate_id:state.selectedId};}
 function json(v) {return JSON.stringify(v, null, 2);}
 let toastTimer;
@@ -153,7 +164,7 @@ function renderExport() {
 }
 async function navigate(page) {
   state.page=page;
-  if(page===3) {state.runs=await api('benchmarks');state.jobs=await api('benchmark/jobs');state.capabilities=await api('benchmark/capabilities');}
+  if(page===3) {state.runs=await loadRuns();state.jobs=await api('benchmark/jobs');state.capabilities=await api('benchmark/capabilities');}
   if(page===4) state.export=await api('export',candidatePayload());
   await render(); window.scrollTo({top:0,behavior:'instant'});
   document.getElementById('main').focus({preventScroll:true});
@@ -162,7 +173,7 @@ function download(name, value, type='application/json') {const blob=new Blob([ty
 async function readJSON(file) {if(!file || !file.size) throw new Error('Choose a JSON file.');if(file.size>20*1024*1024)throw new Error('JSON imports must be smaller than 20 MB.');try{return JSON.parse(await file.text());}catch{throw new Error('The file must contain valid JSON.');}}
 function formValues(form) {return Object.fromEntries(new FormData(form));}
 function number(v,key) {const n=Number(v[key]);if(!Number.isFinite(n))throw new Error(`Invalid number: ${key}`);return n;}
-async function finishPaste(r){state.pasteText='';state.pasteContext=null;state.runs=await api('benchmarks');await recalculate();await render();toast(`Imported ${r.imported} benchmark record(s). Recommendations recalculated.`);}
+async function finishPaste(r){await keepRuns(r.records);state.pasteText='';state.pasteContext=null;state.runs=await loadRuns();await recalculate();await render();toast(`Imported ${r.imported} benchmark record(s). Recommendations recalculated.`);}
 async function handleSubmit(event) {
   const form=event.target;if(!(form instanceof HTMLFormElement))return;
   event.preventDefault();const v=formValues(form),button=form.querySelector('button[type=submit]');if(button?.disabled)return;
@@ -192,7 +203,7 @@ async function handleSubmit(event) {
       const fresh=out.hardware.map(h=>({...h,prefill_tokens_per_second:prefill[h.id]}));const ids=new Set(recs.map(r=>r.id));
       state.hardware=[...old.filter(h=>!ids.has(h.id)),...fresh];state.hardware_catalog=out.records;
       try{await recalculate();}catch(e){state.hardware=old;throw e;}
-      await render();toast('Hardware catalog edits applied.');
+      await persistHardware();await render();toast('Hardware catalog edits applied.');
     } else if(form.id==='quick-form') {
       state.quickEfficiency=number(v,'efficiency');state.quick=await api('quick-estimate',{plan:plan(),decode_efficiency:state.quickEfficiency});await render();
     } else if(form.id==='paste-form') {
@@ -206,10 +217,10 @@ async function handleSubmit(event) {
       const old=state.hardware;
       state.hardware=old.map((h,i)=>{const changed=h.hourly_usd!==number(v,'price_'+i)||h.provider!==v['provider_'+i]||h.region!==v['region_'+i]||h.price_date!==v['date_'+i];return {...h,hourly_usd:number(v,'price_'+i),provider:v['provider_'+i],region:v['region_'+i],price_date:v['date_'+i],pricing_kind:changed?'Supplied':h.pricing_kind};});
       try{await recalculate();}catch(e){state.hardware=old;throw e;}
-      await render();toast('Hardware pricing updated.');
+      await persistHardware();await render();toast('Hardware pricing updated.');
     } else if(form.id==='import-form') {
       const data=await readJSON(v.file);const body={format:v.format,data};if(v.format==='vllm')body.context=await readJSON(v.context);
-      const result=await api('benchmarks/import',body);state.runs=await api('benchmarks');await recalculate();await render();toast(`Imported ${result.imported} benchmark record(s). Recommendations recalculated.`);
+      const result=await api('benchmarks/import',body);await keepRuns(result.records);state.runs=await loadRuns();await recalculate();await render();toast(`Imported ${result.imported} benchmark record(s). Recommendations recalculated.`);
     } else if(form.id==='disagg-form') {
       const result=await api('disaggregation',{...candidatePayload(),prefill_hardware_id:v.prefill_hardware_id,inputs:{network_gbps:number(v,'network_gbps'),network_efficiency:number(v,'network_efficiency'),routing_ms:number(v,'routing_ms'),router_hourly_usd:number(v,'router_hourly_usd'),transfer_stack:v.transfer_stack}});
       document.getElementById('disagg-result').innerHTML=`<div style="margin-top:20px">${notice(`<strong>${esc(result.status)}</strong><br>${result.analytical_screen_passes===undefined?'':`Analytical screen: ${result.analytical_screen_passes?'passes':'fails'} · ${money(result.hourly_usd)}/hour · prefill ${result.prefill_devices} + decode ${result.decode_devices} devices`}`,'warning')}<pre class="code-light">${esc(json(result))}</pre></div>`;
@@ -218,7 +229,7 @@ async function handleSubmit(event) {
       const result=await api('export/kubernetes',{...candidatePayload(),details});state.k8s=result.yaml;
       document.getElementById('k8s-output').innerHTML=`<pre>${esc(result.yaml)}</pre><button class="button primary" data-action="download-k8s">Download Kubernetes YAML</button>`;
     } else if(form.id==='save-form') {
-      await api('scenarios',{...candidatePayload(),name:v.name});state.scenarios=await api('scenarios');document.getElementById('save-dialog').close();renderShell();toast('Scenario saved locally.');
+      const saved=await api('scenarios',{...candidatePayload(),name:v.name});if(isVercel())await Atlas.put('scenarios',v.name,saved.scenario);state.scenarios=await loadScenarios();document.getElementById('save-dialog').close();renderShell();toast('Scenario saved locally.');
     }
   } catch(e) {toast(e.message,true);} finally {if(button)button.disabled=false;}
 }
@@ -237,6 +248,8 @@ document.addEventListener('click',async event=>{
   const action=target.dataset.action;
   try {
     if(action==='navigate')await navigate(Number(target.dataset.page));
+    else if(action==='export-data'){download('inference-atlas-browser-data.json',await Atlas.exportAll());toast('Exported scenarios, benchmarks and hardware edits.');}
+    else if(action==='import-data'){document.getElementById('import-data-file').click();}
     else if(action==='save-scenario')document.getElementById('save-dialog').showModal();
     else if(action==='close-dialog')document.getElementById('save-dialog').close();
     else if(action==='load-scenario') {const saved=state.scenarios[target.dataset.name];Object.assign(state,saved.plan);state.selectedId=saved.candidate_id;await recalculate();await render();toast(`Loaded ${target.dataset.name}`);}
@@ -245,13 +258,13 @@ document.addEventListener('click',async event=>{
     else if(action==='pick-model') {const f=document.getElementById('model-form');f.elements.model_id.value=target.dataset.id;document.getElementById('model-results').hidden=true;f.requestSubmit();}
     else if(action==='select-candidate') {state.selectedId=target.dataset.id;state.export=null;await render();}
     else if(action==='show-all') {state.showAll=!state.showAll;await render();}
-    else if(action==='refresh-history') {state.runs=await api('benchmarks');state.jobs=await api('benchmark/jobs');await recalculate();await render();toast('Benchmark history refreshed.');}
+    else if(action==='refresh-history') {state.runs=await loadRuns();state.jobs=await api('benchmark/jobs');await recalculate();await render();toast('Benchmark history refreshed.');}
     else if(action==='view-run') {const r=state.runs.find(r=>r.run_id===target.dataset.id);const el=document.getElementById('run-detail');el.innerHTML=`<h3>${esc(r.run_id)} · Measured record</h3><p class="chart-note">Compare this run’s client percentiles with the selected configuration’s service estimates. A different workload, revision, or launch configuration does not validate this plan.</p><div class="metrics-grid">${metric('ESTIMATED TTFT · SERVICE',fmt(selected()?.ttft_service_s*1000||null),'ms','Current candidate, mean-length baseline')}${metric('MEASURED TTFT · P95',fmt(r.metrics.ttft_s.p95==null?null:r.metrics.ttft_s.p95*1000),'ms','Includes client/queueing per definition')}${metric('ESTIMATED TPOT · SERVICE',fmt(selected()?.tpot_service_s*1000||null),'ms','Current candidate, mean-length baseline')}${metric('MEASURED TPOT · '+state.workload.tpot_percentile.toUpperCase(),fmt(r.metrics.tpot_s[state.workload.tpot_percentile]==null?null:r.metrics.tpot_s[state.workload.tpot_percentile]*1000),'ms','Missing metrics remain missing')}</div><pre class="code-light">${esc(json(r))}</pre>`;el.scrollIntoView({behavior:'smooth',block:'nearest'});}
     else if(action==='download-context') {const context=await api('benchmark/context',candidatePayload());download('benchmark-context.json',{...context,run_id:null,timestamp:null,source:'Fill in actual benchmark source',warmup_s:null});toast('Add the real run ID, timestamp, warmup and missing metadata before using this as a sidecar.');}
     else if(action==='download-schema') {const response=await fetch('/static/benchmark.schema.json');download('benchmark.schema.json',await response.json());}
     else if(action==='health-check') {const result=await api('benchmark/health',{});toast(json(result));}
     else if(action==='submit-benchmark') {const job=await api('benchmark/submit',candidatePayload());state.jobs=await api('benchmark/jobs');await render();toast('Submitted benchmark job '+job.job_id);}
-    else if(action.startsWith('job-')) {const jobAction=action.slice(4);const result=await api('benchmark/job/'+jobAction,{job_id:target.dataset.id});state.jobs=await api('benchmark/jobs');state.runs=await api('benchmarks');await recalculate();await render();toast(jobAction==='results'?`Imported ${result.imported} record(s).`:'Job state refreshed.');}
+    else if(action.startsWith('job-')) {const jobAction=action.slice(4);const result=await api('benchmark/job/'+jobAction,{job_id:target.dataset.id});state.jobs=await api('benchmark/jobs');state.runs=await loadRuns();await recalculate();await render();toast(jobAction==='results'?`Imported ${result.imported} record(s).`:'Job state refreshed.');}
     else if(action==='download-command')download('serve-vllm.sh',state.export.serving.command+'\n','text/x-shellscript');
     else if(action==='copy-command') {await navigator.clipboard.writeText(state.export.serving.command);toast('Command copied.');}
     else if(action==='download-report')download('inference-sizing-report.json',state.export.report);
@@ -260,5 +273,7 @@ document.addEventListener('click',async event=>{
 });
 document.addEventListener('keydown',event=>{if((event.key==='Enter'||event.key===' ')&&event.target.matches('tr[data-action]')){event.preventDefault();event.target.click();}});
 setInterval(async()=>{if(state.page!==3||state.busy||!state.capabilities?.poll)return;const pending=Object.entries(state.jobs).filter(([,j])=>['queued','running'].includes(j.state.state));if(!pending.length)return;try{for(const [id] of pending)await api('benchmark/job/poll',{job_id:id});state.jobs=await api('benchmark/jobs');const el=document.activeElement;if(!el||!['INPUT','TEXTAREA','SELECT'].includes(el.tagName))await render();}catch(e){toast(e.message,true);}},5000);
-async function init(){try {const result=await api('bootstrap');Object.assign(state,result);state.scenarios=await api('scenarios');await recalculate();await render();document.dispatchEvent(new Event('atlas-ready'));}catch(e){document.getElementById('main').innerHTML=heading('Workspace could not load.', 'Check the local Python server and refresh.')+notice(esc(e.message),'danger');}}
+async function init(){try {const result=await api('bootstrap');Object.assign(state,result);if(isVercel())await restoreBrowserData();else state.scenarios=await api('scenarios');await recalculate();await render();document.dispatchEvent(new Event('atlas-ready'));}catch(e){document.getElementById('main').innerHTML=heading('Workspace could not load.', 'Check the local Python server and refresh.')+notice(esc(e.message),'danger');}}
 init();
+
+document.addEventListener('change',async event=>{if(event.target.id!=='import-data-file')return;try{await Atlas.importAll(await readJSON(event.target.files[0]));await restoreBrowserData();await recalculate();await render();toast('Imported browser data.');}catch(e){toast(e.message,true);}finally{event.target.value='';}});
