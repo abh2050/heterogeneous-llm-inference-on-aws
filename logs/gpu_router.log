@@ -1,0 +1,1190 @@
+INFO:     Started server process [5555]
+INFO:     Waiting for application startup.
+
+   ██╗     ██╗████████╗███████╗██╗     ██╗     ███╗   ███╗
+   ██║     ██║╚══██╔══╝██╔════╝██║     ██║     ████╗ ████║
+   ██║     ██║   ██║   █████╗  ██║     ██║     ██╔████╔██║
+   ██║     ██║   ██║   ██╔══╝  ██║     ██║     ██║╚██╔╝██║
+   ███████╗██║   ██║   ███████╗███████╗███████╗██║ ╚═╝ ██║
+   ╚══════╝╚═╝   ╚═╝   ╚══════╝╚══════╝╚══════╝╚═╝     ╚═╝
+
+23:37:54 - LiteLLM Proxy:WARNING: login_throttle.py:126 - trusted_proxy_ranges is not set or not a valid list of ranges, so failed Admin UI sign-in attempts are limited per source address and username only. Set it to the address ranges of the proxies in front of LiteLLM, or to an empty list when clients connect directly, to also limit each source address across usernames.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:4000 (Press CTRL+C to quit)
+
+#------------------------------------------------------------#
+#                                                            #
+#           'It would help me if you could add...'            #
+#        https://github.com/BerriAI/litellm/issues/new        #
+#                                                            #
+#------------------------------------------------------------#
+
+ Thank you for using LiteLLM! - Krrish & Ishaan
+
+
+
+Give Feedback / Get Help: https://github.com/BerriAI/litellm/issues/new
+
+
+LiteLLM: Proxy initialized with Config, Set models:
+    qwen-fast
+    qwen-batch
+INFO:     127.0.0.1:41292 - "GET /health/liveliness HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41306 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41314 - "POST /v1/completions HTTP/1.1" 200 OK
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7a2768b42450>, 567.954424697)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7a2768a5ecf0>
+INFO:     127.0.0.1:33360 - "POST /tokenize HTTP/1.1" 404 Not Found
+23:38:46 - LiteLLM Proxy:ERROR: auth_exception_handler.py:197 - litellm.proxy.proxy_server.user_api_key_auth(): Exception occured - Malformed API Key passed in. Ensure Key has `Bearer ` prefix.
+Requester IP Address:127.0.0.1
+Traceback (most recent call last):
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/proxy/auth/user_api_key_auth.py", line 1967, in user_api_key_auth_builder
+    raise Exception("Malformed API Key passed in. Ensure Key has `Bearer ` prefix.")
+Exception: Malformed API Key passed in. Ensure Key has `Bearer ` prefix.
+INFO:     127.0.0.1:60982 - "GET /metrics HTTP/1.1" 401 Unauthorized
+23:38:46 - LiteLLM Proxy:ERROR: auth_exception_handler.py:197 - litellm.proxy.proxy_server.user_api_key_auth(): Exception occured - Malformed API Key passed in. Ensure Key has `Bearer ` prefix.
+Requester IP Address:127.0.0.1
+Traceback (most recent call last):
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/proxy/auth/user_api_key_auth.py", line 1967, in user_api_key_auth_builder
+    raise Exception("Malformed API Key passed in. Ensure Key has `Bearer ` prefix.")
+Exception: Malformed API Key passed in. Ensure Key has `Bearer ` prefix.
+INFO:     127.0.0.1:60992 - "GET /metrics HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:32772 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32784 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32788 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32790 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32806 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32814 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32816 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32772 - "POST /v1/completions HTTP/1.1" 200 OK
+23:38:48 - LiteLLM Proxy:ERROR: proxy_server.py:10328 - litellm.proxy.proxy_server.async_data_generator(): Exception occured - litellm.InternalServerError: InternalServerError: OpenAIException - litellm.MidStreamFallbackError: litellm.InternalServerError: The model is repeating the same chunk = 金字塔. Original exception: InternalServerError: litellm.InternalServerError: The model is repeating the same chunk = 金字塔.
+Traceback (most recent call last):
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 2027, in __anext__
+    processed_chunk: ModelResponseStream | None = self.chunk_creator(chunk=chunk)
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 1544, in chunk_creator
+    raise exception_type(
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 1532, in chunk_creator
+    result: Final = self.return_processed_chunk_logic(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 972, in return_processed_chunk_logic
+    self.raise_on_model_repetition()
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 484, in raise_on_model_repetition
+    raise litellm.InternalServerError(
+litellm.exceptions.InternalServerError: litellm.InternalServerError: The model is repeating the same chunk = 金字塔.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/llms/openai/completion/handler.py", line 312, in async_streaming
+    async for transformed_chunk in streamwrapper:
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 2134, in __anext__
+    self._log_stream_failure_and_raise(e)
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 2258, in _log_stream_failure_and_raise
+    self._handle_stream_fallback_error(e)
+  File "/home/ubuntu/router/lib/python3.12... (litellm_truncated skipped 1863 chars. Truncation is a stdout logging safeguard. Full, untruncated data is logged to logging callbacks (OTEL, Datadog, etc.) and at DEBUG level. To increase the truncation limit, set `MAX_STRING_LENGTH_STDOUT_LOG` in your env.) ...41, in _wrap_streaming_iterator_with_enrichment
+    async for chunk in guarded:
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/proxy/hooks/responses_id_security.py", line 339, in async_post_call_streaming_iterator_hook
+    async for chunk in response:
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/proxy/utils.py", line 539, in __anext__
+    return await self._upstream.__anext__()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/router_utils/add_retry_fallback_headers.py", line 122, in __anext__
+    return await cast(  # cast-ok: provider stream is guarded by __anext__
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/utils.py", line 7612, in __anext__
+    async for chunk in self.completion_stream:
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/main.py", line 773, in _async_streaming
+    raise exception_type(
+          ^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/exception_mapping_utils.py", line 2745, in exception_type
+    raise e  # it's already mapped
+    ^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/exception_mapping_utils.py", line 2492, in exception_type
+    _map_openai_exception(
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/exception_mapping_utils.py", line 475, in _map_openai_exception
+    raise InternalServerError(
+litellm.exceptions.InternalServerError: litellm.InternalServerError: InternalServerError: OpenAIException - litellm.MidStreamFallbackError: litellm.InternalServerError: The model is repeating the same chunk = 金字塔. Original exception: InternalServerError: litellm.InternalServerError: The model is repeating the same chunk = 金字塔.
+INFO:     127.0.0.1:32822 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32784 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32838 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32788 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32790 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32806 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32814 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32816 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32772 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32822 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32784 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32838 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32850 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32864 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32874 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32890 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32788 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32790 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32806 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32814 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32816 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32772 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32822 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32784 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32838 - "POST /v1/completions HTTP/1.1" 200 OK
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7a2768dc6180>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7a2768a9bcd0>, 566.317858433)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7a2768e0b830>
+INFO:     127.0.0.1:32850 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32864 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32890 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32874 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32788 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32790 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32806 - "POST /v1/completions HTTP/1.1" 200 OK
+23:38:57 - LiteLLM Proxy:ERROR: auth_exception_handler.py:197 - litellm.proxy.proxy_server.user_api_key_auth(): Exception occured - Malformed API Key passed in. Ensure Key has `Bearer ` prefix.
+Requester IP Address:127.0.0.1
+Traceback (most recent call last):
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/proxy/auth/user_api_key_auth.py", line 1967, in user_api_key_auth_builder
+    raise Exception("Malformed API Key passed in. Ensure Key has `Bearer ` prefix.")
+Exception: Malformed API Key passed in. Ensure Key has `Bearer ` prefix.
+INFO:     127.0.0.1:32814 - "GET /metrics HTTP/1.1" 401 Unauthorized
+23:38:57 - LiteLLM Proxy:ERROR: auth_exception_handler.py:197 - litellm.proxy.proxy_server.user_api_key_auth(): Exception occured - Malformed API Key passed in. Ensure Key has `Bearer ` prefix.
+Requester IP Address:127.0.0.1
+Traceback (most recent call last):
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/proxy/auth/user_api_key_auth.py", line 1967, in user_api_key_auth_builder
+    raise Exception("Malformed API Key passed in. Ensure Key has `Bearer ` prefix.")
+Exception: Malformed API Key passed in. Ensure Key has `Bearer ` prefix.
+INFO:     127.0.0.1:32816 - "GET /metrics HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:53596 - "POST /tokenize HTTP/1.1" 404 Not Found
+23:40:08 - LiteLLM Proxy:ERROR: auth_exception_handler.py:197 - litellm.proxy.proxy_server.user_api_key_auth(): Exception occured - Malformed API Key passed in. Ensure Key has `Bearer ` prefix.
+Requester IP Address:127.0.0.1
+Traceback (most recent call last):
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/proxy/auth/user_api_key_auth.py", line 1967, in user_api_key_auth_builder
+    raise Exception("Malformed API Key passed in. Ensure Key has `Bearer ` prefix.")
+Exception: Malformed API Key passed in. Ensure Key has `Bearer ` prefix.
+INFO:     127.0.0.1:53610 - "GET /metrics HTTP/1.1" 401 Unauthorized
+23:40:08 - LiteLLM Proxy:ERROR: auth_exception_handler.py:197 - litellm.proxy.proxy_server.user_api_key_auth(): Exception occured - Malformed API Key passed in. Ensure Key has `Bearer ` prefix.
+Requester IP Address:127.0.0.1
+Traceback (most recent call last):
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/proxy/auth/user_api_key_auth.py", line 1967, in user_api_key_auth_builder
+    raise Exception("Malformed API Key passed in. Ensure Key has `Bearer ` prefix.")
+Exception: Malformed API Key passed in. Ensure Key has `Bearer ` prefix.
+INFO:     127.0.0.1:53622 - "GET /metrics HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:53626 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53628 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53630 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53644 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53654 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53670 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53680 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53626 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53688 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53702 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53716 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53628 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53630 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53644 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53654 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53670 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53680 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53626 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53688 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53702 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53716 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53732 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53738 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53746 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53752 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53628 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53754 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53630 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53644 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53654 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53670 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53680 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53626 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53688 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53702 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53716 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53732 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53738 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53746 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53752 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53628 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53754 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53630 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53644 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53654 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53670 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53680 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53626 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53688 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53702 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53716 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53732 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53738 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53746 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53752 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53628 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53754 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53630 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53644 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53654 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53670 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53680 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53626 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53688 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53702 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53716 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53732 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53738 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53746 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53752 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53628 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53754 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53630 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53644 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53654 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53670 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53626 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53680 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53688 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53702 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53716 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53732 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53738 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53746 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53752 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53628 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53754 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53630 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53644 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53654 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53670 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53626 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53680 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53688 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53702 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53716 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53732 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53738 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53746 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53752 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53628 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53754 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53644 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53630 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53654 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53670 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53626 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53680 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53688 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53702 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53716 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53732 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53738 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53746 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53752 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53628 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53754 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53630 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53644 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53654 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53670 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53626 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53680 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53688 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53702 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53716 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53732 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53738 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53746 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53752 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53628 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53754 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53630 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53644 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53654 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53670 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53626 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53680 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53688 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53702 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53716 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53732 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53746 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53738 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53752 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53628 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53754 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53630 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53644 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53654 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53670 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53626 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53680 - "POST /v1/completions HTTP/1.1" 200 OK
+23:40:46 - LiteLLM Proxy:ERROR: proxy_server.py:10328 - litellm.proxy.proxy_server.async_data_generator(): Exception occured - litellm.InternalServerError: InternalServerError: OpenAIException - litellm.MidStreamFallbackError: litellm.InternalServerError: The model is repeating the same chunk = rop. Original exception: InternalServerError: litellm.InternalServerError: The model is repeating the same chunk = rop.
+Traceback (most recent call last):
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 2027, in __anext__
+    processed_chunk: ModelResponseStream | None = self.chunk_creator(chunk=chunk)
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 1544, in chunk_creator
+    raise exception_type(
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 1532, in chunk_creator
+    result: Final = self.return_processed_chunk_logic(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 972, in return_processed_chunk_logic
+    self.raise_on_model_repetition()
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 484, in raise_on_model_repetition
+    raise litellm.InternalServerError(
+litellm.exceptions.InternalServerError: litellm.InternalServerError: The model is repeating the same chunk = rop.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/llms/openai/completion/handler.py", line 312, in async_streaming
+    async for transformed_chunk in streamwrapper:
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 2134, in __anext__
+    self._log_stream_failure_and_raise(e)
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 2258, in _log_stream_failure_and_raise
+    self._handle_stream_fallback_error(e)
+  File "/home/ubuntu/router/lib/python3.12... (litellm_truncated skipped 1863 chars. Truncation is a stdout logging safeguard. Full, untruncated data is logged to logging callbacks (OTEL, Datadog, etc.) and at DEBUG level. To increase the truncation limit, set `MAX_STRING_LENGTH_STDOUT_LOG` in your env.) ...41, in _wrap_streaming_iterator_with_enrichment
+    async for chunk in guarded:
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/proxy/hooks/responses_id_security.py", line 339, in async_post_call_streaming_iterator_hook
+    async for chunk in response:
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/proxy/utils.py", line 539, in __anext__
+    return await self._upstream.__anext__()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/router_utils/add_retry_fallback_headers.py", line 122, in __anext__
+    return await cast(  # cast-ok: provider stream is guarded by __anext__
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/utils.py", line 7612, in __anext__
+    async for chunk in self.completion_stream:
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/main.py", line 773, in _async_streaming
+    raise exception_type(
+          ^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/exception_mapping_utils.py", line 2745, in exception_type
+    raise e  # it's already mapped
+    ^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/exception_mapping_utils.py", line 2492, in exception_type
+    _map_openai_exception(
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/exception_mapping_utils.py", line 475, in _map_openai_exception
+    raise InternalServerError(
+litellm.exceptions.InternalServerError: litellm.InternalServerError: InternalServerError: OpenAIException - litellm.MidStreamFallbackError: litellm.InternalServerError: The model is repeating the same chunk = rop. Original exception: InternalServerError: litellm.InternalServerError: The model is repeating the same chunk = rop.
+INFO:     127.0.0.1:53688 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53702 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53716 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53752 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53732 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53746 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53738 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53628 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53754 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53644 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53630 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53654 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53680 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53626 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53670 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53688 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53702 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53716 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53752 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53732 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53746 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53738 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53628 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53754 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53644 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53654 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53680 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53626 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53670 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53688 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53702 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53630 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53752 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53716 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53732 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53746 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53738 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53628 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53754 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53644 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53630 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53654 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53680 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53626 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53670 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53688 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53702 - "POST /v1/completions HTTP/1.1" 200 OK
+23:41:00 - LiteLLM Proxy:ERROR: auth_exception_handler.py:197 - litellm.proxy.proxy_server.user_api_key_auth(): Exception occured - Malformed API Key passed in. Ensure Key has `Bearer ` prefix.
+Requester IP Address:127.0.0.1
+Traceback (most recent call last):
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/proxy/auth/user_api_key_auth.py", line 1967, in user_api_key_auth_builder
+    raise Exception("Malformed API Key passed in. Ensure Key has `Bearer ` prefix.")
+Exception: Malformed API Key passed in. Ensure Key has `Bearer ` prefix.
+INFO:     127.0.0.1:53752 - "GET /metrics HTTP/1.1" 401 Unauthorized
+23:41:00 - LiteLLM Proxy:ERROR: auth_exception_handler.py:197 - litellm.proxy.proxy_server.user_api_key_auth(): Exception occured - Malformed API Key passed in. Ensure Key has `Bearer ` prefix.
+Requester IP Address:127.0.0.1
+Traceback (most recent call last):
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/proxy/auth/user_api_key_auth.py", line 1967, in user_api_key_auth_builder
+    raise Exception("Malformed API Key passed in. Ensure Key has `Bearer ` prefix.")
+Exception: Malformed API Key passed in. Ensure Key has `Bearer ` prefix.
+INFO:     127.0.0.1:53716 - "GET /metrics HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:44404 - "POST /tokenize HTTP/1.1" 404 Not Found
+23:46:28 - LiteLLM Proxy:ERROR: auth_exception_handler.py:197 - litellm.proxy.proxy_server.user_api_key_auth(): Exception occured - Malformed API Key passed in. Ensure Key has `Bearer ` prefix.
+Requester IP Address:127.0.0.1
+Traceback (most recent call last):
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/proxy/auth/user_api_key_auth.py", line 1967, in user_api_key_auth_builder
+    raise Exception("Malformed API Key passed in. Ensure Key has `Bearer ` prefix.")
+Exception: Malformed API Key passed in. Ensure Key has `Bearer ` prefix.
+INFO:     127.0.0.1:44414 - "GET /metrics HTTP/1.1" 401 Unauthorized
+23:46:28 - LiteLLM Proxy:ERROR: auth_exception_handler.py:197 - litellm.proxy.proxy_server.user_api_key_auth(): Exception occured - Malformed API Key passed in. Ensure Key has `Bearer ` prefix.
+Requester IP Address:127.0.0.1
+Traceback (most recent call last):
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/proxy/auth/user_api_key_auth.py", line 1967, in user_api_key_auth_builder
+    raise Exception("Malformed API Key passed in. Ensure Key has `Bearer ` prefix.")
+Exception: Malformed API Key passed in. Ensure Key has `Bearer ` prefix.
+INFO:     127.0.0.1:44424 - "GET /metrics HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:44440 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44446 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44458 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44464 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44478 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44488 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44484 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44498 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44506 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44516 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44530 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44538 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44552 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44808 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44812 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44828 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44838 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44854 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44860 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44874 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44890 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44894 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44896 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44900 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44908 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44914 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44928 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44932 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44940 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44950 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44952 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47932 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47938 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47960 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47966 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47976 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47982 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47998 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48014 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48030 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48038 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48046 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48050 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48052 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48060 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48070 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48078 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48086 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48090 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48096 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48104 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48106 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48114 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59932 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59938 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59954 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59970 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59986 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60002 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60014 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60022 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60036 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60048 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60054 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60066 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60074 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60088 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60102 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60114 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41048 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41060 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41066 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41072 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41084 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41100 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41116 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41118 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41130 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41148 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41156 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41158 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41178 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41192 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41206 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41220 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41228 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41240 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47848 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47858 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47868 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47878 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47882 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44836 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47888 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47892 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47908 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47918 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47922 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47924 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47948 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47940 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47954 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47968 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47978 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47984 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47996 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48010 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48012 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48028 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48032 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54190 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54200 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54214 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54224 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54236 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54248 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54260 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54264 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54280 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54290 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54306 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54320 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54322 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54338 - "POST /v1/completions HTTP/1.1" 200 OK
+23:48:47 - LiteLLM Proxy:ERROR: proxy_server.py:10328 - litellm.proxy.proxy_server.async_data_generator(): Exception occured - litellm.InternalServerError: InternalServerError: OpenAIException - litellm.MidStreamFallbackError: litellm.InternalServerError: The model is repeating the same chunk = aaaaaaaa. Original exception: InternalServerError: litellm.InternalServerError: The model is repeating the same chunk = aaaaaaaa.
+Traceback (most recent call last):
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 2027, in __anext__
+    processed_chunk: ModelResponseStream | None = self.chunk_creator(chunk=chunk)
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 1544, in chunk_creator
+    raise exception_type(
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 1532, in chunk_creator
+    result: Final = self.return_processed_chunk_logic(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 972, in return_processed_chunk_logic
+    self.raise_on_model_repetition()
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 484, in raise_on_model_repetition
+    raise litellm.InternalServerError(
+litellm.exceptions.InternalServerError: litellm.InternalServerError: The model is repeating the same chunk = aaaaaaaa.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/llms/openai/completion/handler.py", line 312, in async_streaming
+    async for transformed_chunk in streamwrapper:
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 2134, in __anext__
+    self._log_stream_failure_and_raise(e)
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 2258, in _log_stream_failure_and_raise
+    self._handle_stream_fallback_error(e)
+  File "/home/ubuntu/router/lib/pytho... (litellm_truncated skipped 1898 chars. Truncation is a stdout logging safeguard. Full, untruncated data is logged to logging callbacks (OTEL, Datadog, etc.) and at DEBUG level. To increase the truncation limit, set `MAX_STRING_LENGTH_STDOUT_LOG` in your env.) ...ap_streaming_iterator_with_enrichment
+    async for chunk in guarded:
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/proxy/hooks/responses_id_security.py", line 339, in async_post_call_streaming_iterator_hook
+    async for chunk in response:
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/proxy/utils.py", line 539, in __anext__
+    return await self._upstream.__anext__()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/router_utils/add_retry_fallback_headers.py", line 122, in __anext__
+    return await cast(  # cast-ok: provider stream is guarded by __anext__
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/utils.py", line 7612, in __anext__
+    async for chunk in self.completion_stream:
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/main.py", line 773, in _async_streaming
+    raise exception_type(
+          ^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/exception_mapping_utils.py", line 2745, in exception_type
+    raise e  # it's already mapped
+    ^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/exception_mapping_utils.py", line 2492, in exception_type
+    _map_openai_exception(
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/exception_mapping_utils.py", line 475, in _map_openai_exception
+    raise InternalServerError(
+litellm.exceptions.InternalServerError: litellm.InternalServerError: InternalServerError: OpenAIException - litellm.MidStreamFallbackError: litellm.InternalServerError: The model is repeating the same chunk = aaaaaaaa. Original exception: InternalServerError: litellm.InternalServerError: The model is repeating the same chunk = aaaaaaaa.
+INFO:     127.0.0.1:54346 - "POST /v1/completions HTTP/1.1" 200 OK
+23:48:56 - LiteLLM Proxy:ERROR: proxy_server.py:10328 - litellm.proxy.proxy_server.async_data_generator(): Exception occured - litellm.InternalServerError: InternalServerError: OpenAIException - litellm.MidStreamFallbackError: litellm.InternalServerError: The model is repeating the same chunk = ความ. Original exception: InternalServerError: litellm.InternalServerError: The model is repeating the same chunk = ความ.
+Traceback (most recent call last):
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 2027, in __anext__
+    processed_chunk: ModelResponseStream | None = self.chunk_creator(chunk=chunk)
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 1544, in chunk_creator
+    raise exception_type(
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 1532, in chunk_creator
+    result: Final = self.return_processed_chunk_logic(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 972, in return_processed_chunk_logic
+    self.raise_on_model_repetition()
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 484, in raise_on_model_repetition
+    raise litellm.InternalServerError(
+litellm.exceptions.InternalServerError: litellm.InternalServerError: The model is repeating the same chunk = ความ.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/llms/openai/completion/handler.py", line 312, in async_streaming
+    async for transformed_chunk in streamwrapper:
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 2134, in __anext__
+    self._log_stream_failure_and_raise(e)
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 2258, in _log_stream_failure_and_raise
+    self._handle_stream_fallback_error(e)
+  File "/home/ubuntu/router/lib/python3.1... (litellm_truncated skipped 1870 chars. Truncation is a stdout logging safeguard. Full, untruncated data is logged to logging callbacks (OTEL, Datadog, etc.) and at DEBUG level. To increase the truncation limit, set `MAX_STRING_LENGTH_STDOUT_LOG` in your env.) ..., in _wrap_streaming_iterator_with_enrichment
+    async for chunk in guarded:
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/proxy/hooks/responses_id_security.py", line 339, in async_post_call_streaming_iterator_hook
+    async for chunk in response:
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/proxy/utils.py", line 539, in __anext__
+    return await self._upstream.__anext__()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/router_utils/add_retry_fallback_headers.py", line 122, in __anext__
+    return await cast(  # cast-ok: provider stream is guarded by __anext__
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/utils.py", line 7612, in __anext__
+    async for chunk in self.completion_stream:
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/main.py", line 773, in _async_streaming
+    raise exception_type(
+          ^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/exception_mapping_utils.py", line 2745, in exception_type
+    raise e  # it's already mapped
+    ^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/exception_mapping_utils.py", line 2492, in exception_type
+    _map_openai_exception(
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/exception_mapping_utils.py", line 475, in _map_openai_exception
+    raise InternalServerError(
+litellm.exceptions.InternalServerError: litellm.InternalServerError: InternalServerError: OpenAIException - litellm.MidStreamFallbackError: litellm.InternalServerError: The model is repeating the same chunk = ความ. Original exception: InternalServerError: litellm.InternalServerError: The model is repeating the same chunk = ความ.
+23:49:04 - LiteLLM Proxy:ERROR: proxy_server.py:10328 - litellm.proxy.proxy_server.async_data_generator(): Exception occured - litellm.InternalServerError: InternalServerError: OpenAIException - litellm.MidStreamFallbackError: litellm.InternalServerError: The model is repeating the same chunk = uche. Original exception: InternalServerError: litellm.InternalServerError: The model is repeating the same chunk = uche.
+Traceback (most recent call last):
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 2027, in __anext__
+    processed_chunk: ModelResponseStream | None = self.chunk_creator(chunk=chunk)
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 1544, in chunk_creator
+    raise exception_type(
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 1532, in chunk_creator
+    result: Final = self.return_processed_chunk_logic(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 972, in return_processed_chunk_logic
+    self.raise_on_model_repetition()
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 484, in raise_on_model_repetition
+    raise litellm.InternalServerError(
+litellm.exceptions.InternalServerError: litellm.InternalServerError: The model is repeating the same chunk = uche.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/llms/openai/completion/handler.py", line 312, in async_streaming
+    async for transformed_chunk in streamwrapper:
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 2134, in __anext__
+    self._log_stream_failure_and_raise(e)
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 2258, in _log_stream_failure_and_raise
+    self._handle_stream_fallback_error(e)
+  File "/home/ubuntu/router/lib/python3.1... (litellm_truncated skipped 1870 chars. Truncation is a stdout logging safeguard. Full, untruncated data is logged to logging callbacks (OTEL, Datadog, etc.) and at DEBUG level. To increase the truncation limit, set `MAX_STRING_LENGTH_STDOUT_LOG` in your env.) ..., in _wrap_streaming_iterator_with_enrichment
+    async for chunk in guarded:
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/proxy/hooks/responses_id_security.py", line 339, in async_post_call_streaming_iterator_hook
+    async for chunk in response:
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/proxy/utils.py", line 539, in __anext__
+    return await self._upstream.__anext__()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/router_utils/add_retry_fallback_headers.py", line 122, in __anext__
+    return await cast(  # cast-ok: provider stream is guarded by __anext__
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/utils.py", line 7612, in __anext__
+    async for chunk in self.completion_stream:
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/main.py", line 773, in _async_streaming
+    raise exception_type(
+          ^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/exception_mapping_utils.py", line 2745, in exception_type
+    raise e  # it's already mapped
+    ^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/exception_mapping_utils.py", line 2492, in exception_type
+    _map_openai_exception(
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/exception_mapping_utils.py", line 475, in _map_openai_exception
+    raise InternalServerError(
+litellm.exceptions.InternalServerError: litellm.InternalServerError: InternalServerError: OpenAIException - litellm.MidStreamFallbackError: litellm.InternalServerError: The model is repeating the same chunk = uche. Original exception: InternalServerError: litellm.InternalServerError: The model is repeating the same chunk = uche.
+INFO:     127.0.0.1:54352 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44436 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54362 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54372 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42142 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42152 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42162 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42176 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42188 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42204 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42208 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42218 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42220 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42232 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42242 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42248 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42262 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42278 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42286 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42290 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42302 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42306 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42320 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42334 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42338 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42350 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42352 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42360 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42366 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40404 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40418 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40424 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40426 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40442 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40444 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40452 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40468 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40482 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40488 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40500 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40514 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40526 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52796 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52808 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52818 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52828 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52834 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48094 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52844 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52846 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52858 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52870 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52882 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52894 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52896 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52904 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52912 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52914 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52920 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52934 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52936 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52938 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52944 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52956 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52970 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52978 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52990 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53000 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53016 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53022 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48514 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48516 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48520 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48536 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48550 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48558 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48572 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48578 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48586 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41140 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48594 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48608 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41170 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48624 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48626 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48642 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40762 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40766 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40770 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40772 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40776 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40786 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40792 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40800 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40806 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40834 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40820 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40850 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40866 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40872 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40888 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40896 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40912 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40926 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40936 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51104 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51122 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51126 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51134 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51150 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51162 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51164 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42364 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40516 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51108 - "POST /v1/completions HTTP/1.1" 200 OK
+23:51:43 - LiteLLM Proxy:ERROR: auth_exception_handler.py:197 - litellm.proxy.proxy_server.user_api_key_auth(): Exception occured - Malformed API Key passed in. Ensure Key has `Bearer ` prefix.
+Requester IP Address:127.0.0.1
+Traceback (most recent call last):
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/proxy/auth/user_api_key_auth.py", line 1967, in user_api_key_auth_builder
+    raise Exception("Malformed API Key passed in. Ensure Key has `Bearer ` prefix.")
+Exception: Malformed API Key passed in. Ensure Key has `Bearer ` prefix.
+INFO:     127.0.0.1:52934 - "GET /metrics HTTP/1.1" 401 Unauthorized
+23:51:43 - LiteLLM Proxy:ERROR: auth_exception_handler.py:197 - litellm.proxy.proxy_server.user_api_key_auth(): Exception occured - Malformed API Key passed in. Ensure Key has `Bearer ` prefix.
+Requester IP Address:127.0.0.1
+Traceback (most recent call last):
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/proxy/auth/user_api_key_auth.py", line 1967, in user_api_key_auth_builder
+    raise Exception("Malformed API Key passed in. Ensure Key has `Bearer ` prefix.")
+Exception: Malformed API Key passed in. Ensure Key has `Bearer ` prefix.
+INFO:     127.0.0.1:52936 - "GET /metrics HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:36164 - "POST /tokenize HTTP/1.1" 404 Not Found
+00:07:49 - LiteLLM Proxy:ERROR: auth_exception_handler.py:197 - litellm.proxy.proxy_server.user_api_key_auth(): Exception occured - Malformed API Key passed in. Ensure Key has `Bearer ` prefix.
+Requester IP Address:127.0.0.1
+Traceback (most recent call last):
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/proxy/auth/user_api_key_auth.py", line 1967, in user_api_key_auth_builder
+    raise Exception("Malformed API Key passed in. Ensure Key has `Bearer ` prefix.")
+Exception: Malformed API Key passed in. Ensure Key has `Bearer ` prefix.
+INFO:     127.0.0.1:36172 - "GET /metrics HTTP/1.1" 401 Unauthorized
+00:07:49 - LiteLLM Proxy:ERROR: auth_exception_handler.py:197 - litellm.proxy.proxy_server.user_api_key_auth(): Exception occured - Malformed API Key passed in. Ensure Key has `Bearer ` prefix.
+Requester IP Address:127.0.0.1
+Traceback (most recent call last):
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/proxy/auth/user_api_key_auth.py", line 1967, in user_api_key_auth_builder
+    raise Exception("Malformed API Key passed in. Ensure Key has `Bearer ` prefix.")
+Exception: Malformed API Key passed in. Ensure Key has `Bearer ` prefix.
+INFO:     127.0.0.1:36180 - "GET /metrics HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:36190 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36202 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36222 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39390 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39396 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39398 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39410 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39422 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39424 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39440 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46536 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46554 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46562 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46568 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46584 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55344 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55356 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55372 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55378 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55388 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36190 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46600 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36216 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36202 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36216 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58188 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58192 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36222 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58194 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58200 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58202 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58216 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58222 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54746 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54754 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54766 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54776 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54790 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54804 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48964 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48974 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48988 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48994 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49006 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49018 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49030 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49036 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34086 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34096 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39390 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34098 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34110 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34114 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34128 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39396 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34132 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34140 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39398 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54742 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39422 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39424 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46536 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46554 - "POST /v1/completions HTTP/1.1" 200 OK
+00:09:17 - LiteLLM Proxy:ERROR: proxy_server.py:10328 - litellm.proxy.proxy_server.async_data_generator(): Exception occured - litellm.InternalServerError: InternalServerError: OpenAIException - litellm.MidStreamFallbackError: litellm.InternalServerError: The model is repeating the same chunk = ความ. Original exception: InternalServerError: litellm.InternalServerError: The model is repeating the same chunk = ความ.
+Traceback (most recent call last):
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 2027, in __anext__
+    processed_chunk: ModelResponseStream | None = self.chunk_creator(chunk=chunk)
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 1544, in chunk_creator
+    raise exception_type(
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 1532, in chunk_creator
+    result: Final = self.return_processed_chunk_logic(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 972, in return_processed_chunk_logic
+    self.raise_on_model_repetition()
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 484, in raise_on_model_repetition
+    raise litellm.InternalServerError(
+litellm.exceptions.InternalServerError: litellm.InternalServerError: The model is repeating the same chunk = ความ.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/llms/openai/completion/handler.py", line 312, in async_streaming
+    async for transformed_chunk in streamwrapper:
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 2134, in __anext__
+    self._log_stream_failure_and_raise(e)
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 2258, in _log_stream_failure_and_raise
+    self._handle_stream_fallback_error(e)
+  File "/home/ubuntu/router/lib/python3.1... (litellm_truncated skipped 1870 chars. Truncation is a stdout logging safeguard. Full, untruncated data is logged to logging callbacks (OTEL, Datadog, etc.) and at DEBUG level. To increase the truncation limit, set `MAX_STRING_LENGTH_STDOUT_LOG` in your env.) ..., in _wrap_streaming_iterator_with_enrichment
+    async for chunk in guarded:
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/proxy/hooks/responses_id_security.py", line 339, in async_post_call_streaming_iterator_hook
+    async for chunk in response:
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/proxy/utils.py", line 539, in __anext__
+    return await self._upstream.__anext__()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/router_utils/add_retry_fallback_headers.py", line 122, in __anext__
+    return await cast(  # cast-ok: provider stream is guarded by __anext__
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/utils.py", line 7612, in __anext__
+    async for chunk in self.completion_stream:
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/main.py", line 773, in _async_streaming
+    raise exception_type(
+          ^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/exception_mapping_utils.py", line 2745, in exception_type
+    raise e  # it's already mapped
+    ^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/exception_mapping_utils.py", line 2492, in exception_type
+    _map_openai_exception(
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/exception_mapping_utils.py", line 475, in _map_openai_exception
+    raise InternalServerError(
+litellm.exceptions.InternalServerError: litellm.InternalServerError: InternalServerError: OpenAIException - litellm.MidStreamFallbackError: litellm.InternalServerError: The model is repeating the same chunk = ความ. Original exception: InternalServerError: litellm.InternalServerError: The model is repeating the same chunk = ความ.
+INFO:     127.0.0.1:46568 - "POST /v1/completions HTTP/1.1" 200 OK
+00:09:21 - LiteLLM Proxy:ERROR: proxy_server.py:10328 - litellm.proxy.proxy_server.async_data_generator(): Exception occured - litellm.InternalServerError: InternalServerError: OpenAIException - litellm.MidStreamFallbackError: litellm.InternalServerError: The model is repeating the same chunk = aaaaaaaa. Original exception: InternalServerError: litellm.InternalServerError: The model is repeating the same chunk = aaaaaaaa.
+Traceback (most recent call last):
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 2027, in __anext__
+    processed_chunk: ModelResponseStream | None = self.chunk_creator(chunk=chunk)
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 1544, in chunk_creator
+    raise exception_type(
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 1532, in chunk_creator
+    result: Final = self.return_processed_chunk_logic(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 972, in return_processed_chunk_logic
+    self.raise_on_model_repetition()
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 484, in raise_on_model_repetition
+    raise litellm.InternalServerError(
+litellm.exceptions.InternalServerError: litellm.InternalServerError: The model is repeating the same chunk = aaaaaaaa.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/llms/openai/completion/handler.py", line 312, in async_streaming
+    async for transformed_chunk in streamwrapper:
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 2134, in __anext__
+    self._log_stream_failure_and_raise(e)
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 2258, in _log_stream_failure_and_raise
+    self._handle_stream_fallback_error(e)
+  File "/home/ubuntu/router/lib/pytho... (litellm_truncated skipped 1898 chars. Truncation is a stdout logging safeguard. Full, untruncated data is logged to logging callbacks (OTEL, Datadog, etc.) and at DEBUG level. To increase the truncation limit, set `MAX_STRING_LENGTH_STDOUT_LOG` in your env.) ...ap_streaming_iterator_with_enrichment
+    async for chunk in guarded:
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/proxy/hooks/responses_id_security.py", line 339, in async_post_call_streaming_iterator_hook
+    async for chunk in response:
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/proxy/utils.py", line 539, in __anext__
+    return await self._upstream.__anext__()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/router_utils/add_retry_fallback_headers.py", line 122, in __anext__
+    return await cast(  # cast-ok: provider stream is guarded by __anext__
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/utils.py", line 7612, in __anext__
+    async for chunk in self.completion_stream:
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/main.py", line 773, in _async_streaming
+    raise exception_type(
+          ^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/exception_mapping_utils.py", line 2745, in exception_type
+    raise e  # it's already mapped
+    ^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/exception_mapping_utils.py", line 2492, in exception_type
+    _map_openai_exception(
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/exception_mapping_utils.py", line 475, in _map_openai_exception
+    raise InternalServerError(
+litellm.exceptions.InternalServerError: litellm.InternalServerError: InternalServerError: OpenAIException - litellm.MidStreamFallbackError: litellm.InternalServerError: The model is repeating the same chunk = aaaaaaaa. Original exception: InternalServerError: litellm.InternalServerError: The model is repeating the same chunk = aaaaaaaa.
+INFO:     127.0.0.1:48988 - "POST /v1/completions HTTP/1.1" 200 OK
+00:09:23 - LiteLLM Proxy:ERROR: proxy_server.py:10328 - litellm.proxy.proxy_server.async_data_generator(): Exception occured - litellm.InternalServerError: InternalServerError: OpenAIException - litellm.MidStreamFallbackError: litellm.InternalServerError: The model is repeating the same chunk =  vape. Original exception: InternalServerError: litellm.InternalServerError: The model is repeating the same chunk =  vape.
+Traceback (most recent call last):
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 2027, in __anext__
+    processed_chunk: ModelResponseStream | None = self.chunk_creator(chunk=chunk)
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 1544, in chunk_creator
+    raise exception_type(
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 1532, in chunk_creator
+    result: Final = self.return_processed_chunk_logic(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 972, in return_processed_chunk_logic
+    self.raise_on_model_repetition()
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 484, in raise_on_model_repetition
+    raise litellm.InternalServerError(
+litellm.exceptions.InternalServerError: litellm.InternalServerError: The model is repeating the same chunk =  vape.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/llms/openai/completion/handler.py", line 312, in async_streaming
+    async for transformed_chunk in streamwrapper:
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 2134, in __anext__
+    self._log_stream_failure_and_raise(e)
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 2258, in _log_stream_failure_and_raise
+    self._handle_stream_fallback_error(e)
+  File "/home/ubuntu/router/lib/python3.... (litellm_truncated skipped 1877 chars. Truncation is a stdout logging safeguard. Full, untruncated data is logged to logging callbacks (OTEL, Datadog, etc.) and at DEBUG level. To increase the truncation limit, set `MAX_STRING_LENGTH_STDOUT_LOG` in your env.) ...in _wrap_streaming_iterator_with_enrichment
+    async for chunk in guarded:
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/proxy/hooks/responses_id_security.py", line 339, in async_post_call_streaming_iterator_hook
+    async for chunk in response:
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/proxy/utils.py", line 539, in __anext__
+    return await self._upstream.__anext__()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/router_utils/add_retry_fallback_headers.py", line 122, in __anext__
+    return await cast(  # cast-ok: provider stream is guarded by __anext__
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/utils.py", line 7612, in __anext__
+    async for chunk in self.completion_stream:
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/main.py", line 773, in _async_streaming
+    raise exception_type(
+          ^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/exception_mapping_utils.py", line 2745, in exception_type
+    raise e  # it's already mapped
+    ^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/exception_mapping_utils.py", line 2492, in exception_type
+    _map_openai_exception(
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/exception_mapping_utils.py", line 475, in _map_openai_exception
+    raise InternalServerError(
+litellm.exceptions.InternalServerError: litellm.InternalServerError: InternalServerError: OpenAIException - litellm.MidStreamFallbackError: litellm.InternalServerError: The model is repeating the same chunk =  vape. Original exception: InternalServerError: litellm.InternalServerError: The model is repeating the same chunk =  vape.
+INFO:     127.0.0.1:49030 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55344 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39390 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55378 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55388 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36190 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46518 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46524 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46530 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46532 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46544 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46556 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46570 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46582 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57744 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57758 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57774 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57784 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57794 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36202 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36216 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54740 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58192 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58222 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58200 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54746 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54754 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54766 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48994 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49018 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32832 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32848 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32854 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37884 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49036 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34086 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34096 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34098 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34110 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34132 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34140 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39398 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36218 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36232 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36236 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36250 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36258 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39422 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39424 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46554 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57740 - "POST /v1/completions HTTP/1.1" 200 OK
+00:10:50 - LiteLLM Proxy:ERROR: proxy_server.py:10328 - litellm.proxy.proxy_server.async_data_generator(): Exception occured - litellm.InternalServerError: InternalServerError: OpenAIException - litellm.MidStreamFallbackError: litellm.InternalServerError: The model is repeating the same chunk = �� . Original exception: InternalServerError: litellm.InternalServerError: The model is repeating the same chunk = �� .
+Traceback (most recent call last):
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 2027, in __anext__
+    processed_chunk: ModelResponseStream | None = self.chunk_creator(chunk=chunk)
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 1544, in chunk_creator
+    raise exception_type(
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 1532, in chunk_creator
+    result: Final = self.return_processed_chunk_logic(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 972, in return_processed_chunk_logic
+    self.raise_on_model_repetition()
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 484, in raise_on_model_repetition
+    raise litellm.InternalServerError(
+litellm.exceptions.InternalServerError: litellm.InternalServerError: The model is repeating the same chunk = �� .
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/llms/openai/completion/handler.py", line 312, in async_streaming
+    async for transformed_chunk in streamwrapper:
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 2134, in __anext__
+    self._log_stream_failure_and_raise(e)
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/streaming_handler.py", line 2258, in _log_stream_failure_and_raise
+    self._handle_stream_fallback_error(e)
+  File "/home/ubuntu/router/lib/python3.12... (litellm_truncated skipped 1863 chars. Truncation is a stdout logging safeguard. Full, untruncated data is logged to logging callbacks (OTEL, Datadog, etc.) and at DEBUG level. To increase the truncation limit, set `MAX_STRING_LENGTH_STDOUT_LOG` in your env.) ...41, in _wrap_streaming_iterator_with_enrichment
+    async for chunk in guarded:
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/proxy/hooks/responses_id_security.py", line 339, in async_post_call_streaming_iterator_hook
+    async for chunk in response:
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/proxy/utils.py", line 539, in __anext__
+    return await self._upstream.__anext__()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/router_utils/add_retry_fallback_headers.py", line 122, in __anext__
+    return await cast(  # cast-ok: provider stream is guarded by __anext__
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/utils.py", line 7612, in __anext__
+    async for chunk in self.completion_stream:
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/main.py", line 773, in _async_streaming
+    raise exception_type(
+          ^^^^^^^^^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/exception_mapping_utils.py", line 2745, in exception_type
+    raise e  # it's already mapped
+    ^^^^^^^
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/exception_mapping_utils.py", line 2492, in exception_type
+    _map_openai_exception(
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/litellm_core_utils/exception_mapping_utils.py", line 475, in _map_openai_exception
+    raise InternalServerError(
+litellm.exceptions.InternalServerError: litellm.InternalServerError: InternalServerError: OpenAIException - litellm.MidStreamFallbackError: litellm.InternalServerError: The model is repeating the same chunk = �� . Original exception: InternalServerError: litellm.InternalServerError: The model is repeating the same chunk = �� .
+INFO:     127.0.0.1:46536 - "POST /v1/completions HTTP/1.1" 200 OK
+00:10:56 - LiteLLM Proxy:ERROR: auth_exception_handler.py:197 - litellm.proxy.proxy_server.user_api_key_auth(): Exception occured - Malformed API Key passed in. Ensure Key has `Bearer ` prefix.
+Requester IP Address:127.0.0.1
+Traceback (most recent call last):
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/proxy/auth/user_api_key_auth.py", line 1967, in user_api_key_auth_builder
+    raise Exception("Malformed API Key passed in. Ensure Key has `Bearer ` prefix.")
+Exception: Malformed API Key passed in. Ensure Key has `Bearer ` prefix.
+INFO:     127.0.0.1:34096 - "GET /metrics HTTP/1.1" 401 Unauthorized
+00:10:56 - LiteLLM Proxy:ERROR: auth_exception_handler.py:197 - litellm.proxy.proxy_server.user_api_key_auth(): Exception occured - Malformed API Key passed in. Ensure Key has `Bearer ` prefix.
+Requester IP Address:127.0.0.1
+Traceback (most recent call last):
+  File "/home/ubuntu/router/lib/python3.12/site-packages/litellm/proxy/auth/user_api_key_auth.py", line 1967, in user_api_key_auth_builder
+    raise Exception("Malformed API Key passed in. Ensure Key has `Bearer ` prefix.")
+Exception: Malformed API Key passed in. Ensure Key has `Bearer ` prefix.
+INFO:     127.0.0.1:34098 - "GET /metrics HTTP/1.1" 401 Unauthorized
