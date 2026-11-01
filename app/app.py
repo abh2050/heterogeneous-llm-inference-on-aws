@@ -20,6 +20,7 @@ from planner.exports import DeploymentDetails, kubernetes_yaml, sizing_report, v
 from planner.hf_metadata import MetadataError, apply_overrides, fetch_model, normalize, parse_model_id
 from planner.models import Assumptions, Candidate, ModelSpec, Workload
 from planner.presets import presets
+from planner.quick import ADVANCED, DECODE_EFFICIENCY, SIMPLIFIED, quick_table
 from planner.security import scrub
 from planner.service import PlanningRequest, compare
 from planner.sizing import DisaggregationInputs, compare_disaggregated
@@ -128,6 +129,25 @@ def convert_catalog(payload: dict):
         raise ValueError("entries must be a list of 1 to 60 catalog records")
     entries = [CatalogEntry.model_validate({k: v for k, v in r.items() if k not in {"usable", "missing"}}) for r in rows]
     return build_catalog(entries, builtin=[])
+
+
+@app.post("/api/quick-estimate")
+def quick_estimate_route(payload: dict):
+    request = PlanningRequest.model_validate(payload["plan"])
+    w, a = request.workload, request.assumptions
+    users = int(payload.get("users") or w.effective_peak_users or 1)
+    context = int(payload.get("context") or w.input_max + w.output_max)
+    rows = quick_table(
+        request.model,
+        request.hardware,
+        bytes_per_parameter=request.model.effective_weight_bytes or a.weight_bytes,
+        kv_bytes=a.kv_bytes,
+        context=context,
+        users=users,
+        input_tokens=w.input_avg,
+        decode_efficiency=float(payload.get("decode_efficiency", DECODE_EFFICIENCY)),
+    )
+    return {"rows": rows, "users": users, "context": context, "label": SIMPLIFIED, "advanced_label": ADVANCED}
 
 
 @app.get("/api/presets")
