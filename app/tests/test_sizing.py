@@ -201,3 +201,25 @@ def test_workload_presets_are_valid_distinct_and_cover_four_jobs():
         assert w.input_max + w.output_max == p["context_length"]
         assert w.input_avg <= w.input_max and w.output_avg <= w.output_max
     assert len({p["workload"]["input_avg"] for p in listed}) == 4
+
+
+def test_peak_users_default_to_ten_percent_and_map_onto_concurrency():
+    from planner.demo import example_model
+    from planner.service import PlanningRequest, compare
+
+    assert Workload().effective_peak_users is None
+    assert Workload(total_users=400).effective_peak_users == 40
+    assert Workload(total_users=3).effective_peak_users == 1
+    assert Workload(total_users=400, peak_concurrent_users=25).effective_peak_users == 25
+    with pytest.raises(ValueError):
+        Workload(total_users=10, peak_concurrent_users=11)
+
+    model = example_model()
+    model.revision = "a" * 40
+    hardware = load_catalog()[:1]
+    base = PlanningRequest(model=model, hardware=hardware)
+    users = PlanningRequest(model=model, hardware=hardware, workload=Workload(total_users=300))
+    assert {c.concurrency for c in compare(users, [])} == {c.concurrency for c in compare(base, [])} | {30}
+    served = [c for c in compare(users, []) if c.feasible and c.concurrency == 30]
+    assert served and all(c.concurrent_users_capacity == 30 * c.replicas for c in served)
+    assert all(c.meets_peak_users for c in served)

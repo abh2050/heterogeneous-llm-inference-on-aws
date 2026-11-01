@@ -7,6 +7,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+PEAK_USER_FRACTION = 0.10
+
 CANONICAL_METRIC_DEFINITIONS = {
     "ttft_s": "Client request to first token, including queueing and transport",
     "tpot_s": "Per-request (E2E - TTFT) / (output tokens - 1)",
@@ -91,9 +93,15 @@ class Workload(Record):
     tpot_s: float = Field(default=0.05, gt=0)
     tpot_percentile: Literal["p50", "p90", "p95", "p99"] = "p95"
     operating_hours: float = Field(default=730, gt=0, le=8784)
+    # Optional audience size. Peak concurrent users default to 10% of total users and are mapped onto
+    # the concurrency sweep (see planner.service.sweep_concurrencies); they never replace peak_rps.
+    total_users: int | None = Field(default=None, ge=1)
+    peak_concurrent_users: int | None = Field(default=None, ge=1)
 
     @model_validator(mode="after")
     def lengths(self):
+        if self.total_users and self.peak_concurrent_users and self.peak_concurrent_users > self.total_users:
+            raise ValueError("Peak concurrent users must not exceed total users")
         if self.input_avg > self.input_max or self.output_avg > self.output_max:
             raise ValueError("Average lengths must not exceed maxima")
         if self.prefix_length > self.input_avg:
@@ -112,6 +120,15 @@ class Workload(Record):
     @property
     def planning_rps(self) -> float:
         return self.peak_rps * self.burst_factor * (1 + self.headroom)
+
+    @property
+    def effective_peak_users(self) -> int | None:
+        """Peak concurrent users: explicit value, else 10% of total users (at least 1), else unset."""
+        if self.peak_concurrent_users:
+            return self.peak_concurrent_users
+        if self.total_users:
+            return max(1, round(self.total_users * PEAK_USER_FRACTION))
+        return None
 
 
 class Assumptions(Record):
@@ -185,6 +202,9 @@ class Candidate(Record):
     tpot_service_s: float | None = None
     request_capacity_per_replica: float | None = None
     total_request_capacity: float | None = None
+    # Users served at once across replicas (concurrency x replicas); an added field, not a replacement.
+    concurrent_users_capacity: int | None = None
+    meets_peak_users: bool | None = None
     output_capacity_tps: float | None = None
     hourly_usd: float | None = None
     period_usd: float | None = None
