@@ -35,12 +35,13 @@ def store():
 
 
 def hf_token():
-    token = os.getenv("HF_TOKEN")
+    """HF_TOKEN from the server environment (local shell or a Vercel environment variable)."""
+    token = (os.getenv("HF_TOKEN") or "").strip() or None
     file = os.getenv("PLANNER_SECRETS_FILE")
     if not token and file:
         with open(file, "rb") as f:
             token = tomllib.load(f).get("HF_TOKEN")
-    return token
+    return token.strip() if isinstance(token, str) and token.strip() else None
 
 
 @app.middleware("http")

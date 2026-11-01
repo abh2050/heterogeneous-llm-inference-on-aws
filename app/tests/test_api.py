@@ -129,3 +129,51 @@ def test_presets_served_in_bootstrap_and_endpoint(client):
     plan = get_plan(client)
     plan["workload"].update(boot["presets"][0]["workload"])
     assert client.post("/api/compare", json=plan).status_code == 200
+
+
+SECRET = "hf_" + "a1B2c3D4e5F6g7H8i9J0"
+
+
+def test_hf_token_is_used_for_gated_loads_and_never_returned(client, monkeypatch, model):
+    seen = {}
+
+    class FakeApi:
+        def __init__(self, token=None, **kwargs):
+            seen["api"] = token
+
+        def model_info(self, *args, **kwargs):
+            return type("Info", (), {"sha": "d" * 40, "safetensors": None, "siblings": []})()
+
+    def download(*args, **kwargs):
+        seen["download"] = kwargs.get("token")
+        return config_path
+
+    import json as _json
+    import tempfile
+
+    config_path = tempfile.NamedTemporaryFile("w", suffix=".json", delete=False).name
+    open(config_path, "w").write(_json.dumps(model.raw_config))
+    monkeypatch.setenv("HF_TOKEN", SECRET + "\n")  # trailing newline from a pasted env value
+    monkeypatch.setattr("planner.hf_metadata.HfApi", FakeApi)
+    monkeypatch.setattr("planner.hf_metadata.hf_hub_download", download)
+
+    boot = client.get("/api/bootstrap")
+    assert boot.json()["hf_token_configured"] is True
+    assert SECRET not in boot.text
+    response = client.post("/api/metadata", json={"model_id": "meta-llama/Llama-3.1-8B-Instruct"})
+    assert response.status_code == 200
+    assert seen == {"api": SECRET, "download": SECRET}
+    assert SECRET not in response.text
+
+
+def test_hf_token_never_appears_in_error_messages(client, monkeypatch):
+    class Boom:
+        def __init__(self, token=None, **kwargs):
+            raise RuntimeError(f"connection failed for Authorization: Bearer {token}")
+
+    monkeypatch.setenv("HF_TOKEN", SECRET)
+    monkeypatch.setattr("planner.hf_metadata.HfApi", Boom)
+    response = client.post("/api/metadata", json={"model_id": "org/model"})
+    assert response.status_code >= 400
+    assert SECRET not in response.text
+    assert SECRET not in client.get("/api/bootstrap").text
