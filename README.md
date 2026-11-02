@@ -2,7 +2,7 @@
 
 Can routing by service target, with interactive chat on a GPU pool and long-prompt RAG on a CPU pool, protect chat latency when both workloads arrive at once?
 
-**Result:** A small amount of RAG traffic on the shared GPU pushed chat p99 time to first token from 91 ms to 24.7 seconds. Routing RAG to the CPU pool brought it back to 289 ms, with chat throughput nearly unchanged.
+**Result:** A small amount of RAG traffic (0.75 RAG requests per second alongside 24 chat requests per second) on the shared GPU pushed chat p99 time to first token from 91 ms to 24.7 seconds. Routing RAG to the CPU pool brought it back to 289 ms, with chat throughput nearly unchanged.
 
 | Run | Chat p99 TTFT | Chat p99 ITL | Chat output tok/s |
 |---|---:|---:|---:|
@@ -10,7 +10,13 @@ Can routing by service target, with interactive chat on a GPU pool and long-prom
 | RAG shared on GPU | 24,702 ms | 203.7 ms | 2,009 |
 | RAG routed to CPU | 289 ms | 112.0 ms | 2,942 |
 
+*(single run)*
+
+Chat runs at 24 requests per second, about 70 percent of the 34 requests per second sustained capacity at the SLO, so its throughput is lower than the 5,011 tok/s saturation figure.
+
 The CPU pool was not faster or cheaper per token. It helped by isolating a delay-tolerant workload from interactive traffic.
+
+Calculated cost was about $0.055 per million output tokens on the GPU pool (sustained chat capacity at the SLO) and about $0.78 on the CPU pool (TTFT-only chat capacity).
 
 **Hardware:** GPU pool on an AWS g6.xlarge (NVIDIA L4, 24 GB). CPU pool on an AWS c7i.4xlarge (Intel Xeon, Sapphire Rapids) running vLLM's CPU backend with AMX.
 
@@ -21,7 +27,7 @@ The CPU pool was not faster or cheaper per token. It helped by isolating a delay
 | Component | Role | Setting or result in this experiment |
 |---|---|---|
 | Router | Maps model names to pools behind one OpenAI-compatible API | LiteLLM; about 17 ms added at p50 TTFT |
-| Scheduler | Chooses which requests run together each step | Capping `--max-num-seqs` at 16 improved p99 ITL to 16.9 ms but cut throughput from 5,011 to 1,063 tok/s |
+| Scheduler | Chooses which requests run together each step | Capping `--max-num-seqs` at 16 improved p99 ITL to 16.9 ms but cut throughput to 1,063 tok/s; baseline at saturation was 5,011 tok/s |
 | KV cache | Holds per-request attention state in paged blocks | Halving the pool from 575,440 to 272,832 tokens did not affect chat, because short prompts never filled it |
 | Model | Weights and precision | Qwen2.5 1.5B Instruct, BF16, 4,096-token max length |
 | Kernels | Hardware backend | CUDA on the L4; CPU backend with AMX on Sapphire Rapids |
@@ -52,7 +58,7 @@ This project asks a practical serving question:
 
 To answer it, I built and benchmarked a small production-shaped inference service on AWS. The service ran the same model on two kinds of compute, put both behind a router, generated controlled traffic, and measured latency, throughput, capacity, and cost.
 
-The most important result was clear: **a small amount of long-prompt RAG traffic severely disrupted interactive chat when both shared the GPU. Routing the RAG work to the CPU restored most of the chat performance.** The CPU was not faster or cheaper per token; it was useful because it isolated a different workload.
+The most important result was clear: **a small amount of long-prompt RAG traffic (0.75 RAG requests per second alongside 24 chat requests per second) severely disrupted interactive chat when both shared the GPU. Routing the RAG work to the CPU restored most of the chat performance.** The CPU was not faster or cheaper per token; it was useful because it isolated a different workload.
 
 [Open the interactive stack explainer](docs/index.html) to follow a request through the system, compare Intel, NVIDIA, and AMD stacks, or build a reference architecture step by step.
 
@@ -223,7 +229,7 @@ This was the final experiment. Interactive chat ran at 24 req/s, about 70% of th
 
 See the results table at the top of this README.
 
-Moving RAG to the CPU changed chat p99 TTFT from 24.7 seconds to 289 ms—an 85× improvement—and restored throughput close to the chat-only result. p99 ITL improved from 204 ms to 112 ms.
+Moving RAG to the CPU changed chat p99 TTFT from 24.7 seconds to 289 ms—an 85× improvement (single run)—and restored throughput close to the chat-only result. p99 ITL improved from 204 ms to 112 ms.
 
 The routed run was still worse than chat alone and narrowly missed the 100 ms ITL target. The GPU node had only four vCPUs and was also running the router and two benchmark clients, so CPU contention on that node probably contributed. This was not isolated, and each condition was run only once. The direction of the result is strong; the exact improvement needs repeated trials on a cleaner topology.
 

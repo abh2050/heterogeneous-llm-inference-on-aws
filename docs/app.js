@@ -9,10 +9,10 @@ async function load(){
   renderHero();renderScoreboard();renderSystem();renderExperiments();renderSelector();setupWorkload();setupConcepts();renderGlossary();setupTheme();
 }
 
-function renderHero(){const s=results.scoreboard;$('#heroBefore').textContent=ms(s.shared_p99_ttft_ms);$('#heroAfter').textContent=ms(s.offloaded_p99_ttft_ms);$('#heroImprovement').textContent=`${fmt(s.improvement_x)}× better`}
+function renderHero(){const s=results.scoreboard;$('#heroBefore').textContent=ms(s.shared_p99_ttft_ms);$('#heroAfter').textContent=ms(s.offloaded_p99_ttft_ms);$('#heroImprovement').textContent=`${fmt(s.improvement_x)}× better (single run)`}
 
 function renderScoreboard(){const s=results.scoreboard;const cards=[
-  ['Chat p99 TTFT',`${ms(s.shared_p99_ttft_ms)} → ${ms(s.offloaded_p99_ttft_ms)}`,`${fmt(s.improvement_x)}× better with RAG offloaded`],
+  ['Chat p99 TTFT',`${ms(s.shared_p99_ttft_ms)} → ${ms(s.offloaded_p99_ttft_ms)}`,`${fmt(s.improvement_x)}× better with RAG offloaded (single run)`],
   ['Sustained L4 capacity',`${fmt(s.gpu_capacity_req_s)} req/s`,'Highest measured chat rate meeting both SLOs'],
   ['vLLM vs Hugging Face',`${fmt(s.vllm_speedup_min,2)}–${fmt(s.vllm_speedup_max,2)}×`,'Output throughput across batches 1, 8, and 32'],
   ['LiteLLM router cost',`+${fmt(s.router_p50_added_ms)} ms`,'Added p50 TTFT; throughput stayed within 1%'],

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="A measured AWS experiment and interactive guide to the complete LLM inference stack, from API request to power grid.">
+  <meta name="description" content="A measured AWS experiment, plus an interactive guide to the full LLM inference stack from API request to power grid.">
   <meta name="theme-color" content="#4f46e5">
   <title>Heterogeneous LLM Inference on AWS</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,7 +23,7 @@
     <section class="hero" id="top">
       <div class="hero-copy">
         <p class="eyebrow">AWS experiment · Qwen2.5 1.5B · vLLM</p>
-        <h1>Long RAG prompts made chat users wait. <span>A separate CPU pool fixed it.</span></h1>
+        <h1>Long RAG prompts made chat users wait. <span>A separate CPU pool restored chat response time.</span></h1>
         <p class="hero-lede">We served the same model on an NVIDIA L4 and an Intel Sapphire Rapids CPU, then measured what happened when interactive chat and background RAG shared—or stopped sharing—the GPU.</p>
         <div class="hero-actions"><a class="btn primary" href="#system">See the system</a><a class="btn ghost" href="#selector">Build a stack</a><a class="btn ghost" href="https://github.com/abh2050/heterogeneous-llm-inference-on-aws">GitHub repository</a></div>
       </div>
@@ -36,14 +36,15 @@
 
     <section class="section" id="results">
       <header class="section-header"><span>00</span><div><p>THE RESULT</p><h2>Routing by service target protected chat latency</h2></div></header>
-      <div class="section-intro"><p>Can routing by service target, with interactive chat on a GPU pool and long-prompt RAG on a CPU pool, protect chat latency when both workloads arrive at once?</p><p><strong>Result:</strong> A small amount of RAG traffic on the shared GPU pushed chat p99 time to first token from 91 ms to 24.7 seconds. Routing RAG to the CPU pool brought it back to 289 ms, with chat throughput nearly unchanged.</p></div>
+      <div class="section-intro"><p>Can routing by service target, with interactive chat on a GPU pool and long-prompt RAG on a CPU pool, protect chat latency when both workloads arrive at once?</p><p><strong>Result:</strong> A small amount of RAG traffic (0.75 RAG requests per second alongside 24 chat requests per second) on the shared GPU pushed chat p99 time to first token from 91 ms to 24.7 seconds. Routing RAG to the CPU pool brought it back to 289 ms, with chat throughput nearly unchanged.</p></div>
       <div class="table-wrap"><table><thead><tr><th>Run</th><th>Chat p99 TTFT</th><th>Chat p99 ITL</th><th>Chat output tok/s</th></tr></thead><tbody><tr><td>Chat alone on GPU</td><td>91 ms</td><td>30.2 ms</td><td>2,971</td></tr><tr><td>RAG shared on GPU</td><td>24,702 ms</td><td>203.7 ms</td><td>2,009</td></tr><tr><td>RAG routed to CPU</td><td>289 ms</td><td>112.0 ms</td><td>2,942</td></tr></tbody></table></div>
-      <div class="evidence-grid result-notes"><article><p>The CPU pool was not faster or cheaper per token. It helped by isolating a delay-tolerant workload from interactive traffic.</p></article><article><p><strong>Hardware:</strong> GPU pool on an AWS g6.xlarge (NVIDIA L4, 24 GB). CPU pool on an AWS c7i.4xlarge (Intel Xeon, Sapphire Rapids) running vLLM's CPU backend with AMX.</p></article></div>
+      <div class="section-intro"><p><em>(single run)</em></p><p>Chat runs at 24 requests per second, about 70 percent of the 34 requests per second sustained capacity at the SLO, so its throughput is lower than the 5,011 tok/s saturation figure.</p></div>
+      <div class="evidence-grid result-notes"><article><p>The CPU pool was not faster or cheaper per token. It helped by isolating a delay-tolerant workload from interactive traffic.</p><p>Calculated cost was about $0.055 per million output tokens on the GPU pool (sustained chat capacity at the SLO) and about $0.78 on the CPU pool (TTFT-only chat capacity).</p></article><article><p><strong>Hardware:</strong> GPU pool on an AWS g6.xlarge (NVIDIA L4, 24 GB). CPU pool on an AWS c7i.4xlarge (Intel Xeon, Sapphire Rapids) running vLLM's CPU backend with AMX.</p></article></div>
     </section>
 
     <section class="section" id="internals">
       <header class="section-header"><span>01</span><div><p>ROUTER, SCHEDULER, KV CACHE</p><h2>Serving internals exercised</h2></div></header>
-      <div class="table-wrap wrap-cells"><table><thead><tr><th>Component</th><th>Role</th><th>Setting or result in this experiment</th></tr></thead><tbody><tr><td>Router</td><td>Maps model names to pools behind one OpenAI-compatible API</td><td>LiteLLM; about 17 ms added at p50 TTFT</td></tr><tr><td>Scheduler</td><td>Chooses which requests run together each step</td><td>Capping <code>--max-num-seqs</code> at 16 improved p99 ITL to 16.9 ms but cut throughput from 5,011 to 1,063 tok/s</td></tr><tr><td>KV cache</td><td>Holds per-request attention state in paged blocks</td><td>Halving the pool from 575,440 to 272,832 tokens did not affect chat, because short prompts never filled it</td></tr><tr><td>Model</td><td>Weights and precision</td><td>Qwen2.5 1.5B Instruct, BF16, 4,096-token max length</td></tr><tr><td>Kernels</td><td>Hardware backend</td><td>CUDA on the L4; CPU backend with AMX on Sapphire Rapids</td></tr></tbody></table></div>
+      <div class="table-wrap wrap-cells"><table><thead><tr><th>Component</th><th>Role</th><th>Setting or result in this experiment</th></tr></thead><tbody><tr><td>Router</td><td>Maps model names to pools behind one OpenAI-compatible API</td><td>LiteLLM; about 17 ms added at p50 TTFT</td></tr><tr><td>Scheduler</td><td>Chooses which requests run together each step</td><td>Capping <code>--max-num-seqs</code> at 16 improved p99 ITL to 16.9 ms but cut throughput to 1,063 tok/s; baseline at saturation was 5,011 tok/s</td></tr><tr><td>KV cache</td><td>Holds per-request attention state in paged blocks</td><td>Halving the pool from 575,440 to 272,832 tokens did not affect chat, because short prompts never filled it</td></tr><tr><td>Model</td><td>Weights and precision</td><td>Qwen2.5 1.5B Instruct, BF16, 4,096-token max length</td></tr><tr><td>Kernels</td><td>Hardware backend</td><td>CUDA on the L4; CPU backend with AMX on Sapphire Rapids</td></tr></tbody></table></div>
       <div class="section-intro"><p>Scheduler and memory tuning was tested on chat alone. The interference came from long-prompt prefill competing with chat decode on the same GPU, and separating the workloads removed it.</p></div>
     </section>
 
