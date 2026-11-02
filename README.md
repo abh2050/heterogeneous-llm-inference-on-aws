@@ -60,7 +60,7 @@ To answer it, I built and benchmarked a small production-shaped inference servic
 
 The most important result was clear: **a small amount of long-prompt RAG traffic (0.75 RAG requests per second alongside 24 chat requests per second) severely disrupted interactive chat when both shared the GPU. Routing the RAG work to the CPU restored most of the chat performance.** The CPU was not faster or cheaper per token; it was useful because it isolated a different workload.
 
-[Open the interactive stack explainer](docs/index.html) to follow a request through the system, compare Intel, NVIDIA, and AMD stacks, or build a reference architecture step by step.
+[Open the interactive stack explainer](https://abh2050.github.io/heterogeneous-llm-inference-on-aws/) to follow a request through the system, compare Intel, NVIDIA, and AMD stacks, or build a reference architecture step by step.
 
 ---
 
@@ -71,7 +71,7 @@ There are three related pieces:
 | Piece | Purpose |
 |---|---|
 | **AWS experiment** | Measures how GPU, CPU, routing, batching, KV cache, and mixed workloads behave with real requests. This README explains it. |
-| **Interactive stack explainer** | Shows how gateways, routers, engines, runtimes, accelerators, networking, and operations fit together. [Open it](docs/index.html). |
+| **Interactive stack explainer** | Shows how gateways, routers, engines, runtimes, accelerators, networking, and operations fit together. [Open it](https://abh2050.github.io/heterogeneous-llm-inference-on-aws/). |
 | **Inference Atlas** | Turns these ideas into a capacity-planning application. It estimates memory, speed, latency, and cost for other models and hardware. [Run the app](app/README.md). |
 
 The experiment produces evidence. The explainer makes the architecture legible. The planner helps apply the same reasoning to a new service.
