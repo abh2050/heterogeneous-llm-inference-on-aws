@@ -25,7 +25,7 @@
         <p class="eyebrow">AWS experiment · Qwen2.5 1.5B · vLLM</p>
         <h1>Long RAG prompts made chat users wait. <span>A separate CPU pool fixed it.</span></h1>
         <p class="hero-lede">We served the same model on an NVIDIA L4 and an Intel Sapphire Rapids CPU, then measured what happened when interactive chat and background RAG shared—or stopped sharing—the GPU.</p>
-        <div class="hero-actions"><a class="btn primary" href="#system">See the system</a><a class="btn ghost" href="#selector">Build a stack</a></div>
+        <div class="hero-actions"><a class="btn primary" href="#system">See the system</a><a class="btn ghost" href="#selector">Build a stack</a><a class="btn ghost" href="https://github.com/abh2050/heterogeneous-llm-inference-on-aws">GitHub repository</a></div>
       </div>
       <aside class="hero-stat" aria-label="Main experiment result">
         <span>CHAT p99 TIME TO FIRST TOKEN</span>
@@ -34,23 +34,36 @@
       </aside>
     </section>
 
+    <section class="section" id="results">
+      <header class="section-header"><span>00</span><div><p>THE RESULT</p><h2>Routing by service target protected chat latency</h2></div></header>
+      <div class="section-intro"><p>Can routing by service target, with interactive chat on a GPU pool and long-prompt RAG on a CPU pool, protect chat latency when both workloads arrive at once?</p><p><strong>Result:</strong> A small amount of RAG traffic on the shared GPU pushed chat p99 time to first token from 91 ms to 24.7 seconds. Routing RAG to the CPU pool brought it back to 289 ms, with chat throughput nearly unchanged.</p></div>
+      <div class="table-wrap"><table><thead><tr><th>Run</th><th>Chat p99 TTFT</th><th>Chat p99 ITL</th><th>Chat output tok/s</th></tr></thead><tbody><tr><td>Chat alone on GPU</td><td>91 ms</td><td>30.2 ms</td><td>2,971</td></tr><tr><td>RAG shared on GPU</td><td>24,702 ms</td><td>203.7 ms</td><td>2,009</td></tr><tr><td>RAG routed to CPU</td><td>289 ms</td><td>112.0 ms</td><td>2,942</td></tr></tbody></table></div>
+      <div class="evidence-grid result-notes"><article><p>The CPU pool was not faster or cheaper per token. It helped by isolating a delay-tolerant workload from interactive traffic.</p></article><article><p><strong>Hardware:</strong> GPU pool on an AWS g6.xlarge (NVIDIA L4, 24 GB). CPU pool on an AWS c7i.4xlarge (Intel Xeon, Sapphire Rapids) running vLLM's CPU backend with AMX.</p></article></div>
+    </section>
+
+    <section class="section" id="internals">
+      <header class="section-header"><span>01</span><div><p>ROUTER, SCHEDULER, KV CACHE</p><h2>Serving internals exercised</h2></div></header>
+      <div class="table-wrap wrap-cells"><table><thead><tr><th>Component</th><th>Role</th><th>Setting or result in this experiment</th></tr></thead><tbody><tr><td>Router</td><td>Maps model names to pools behind one OpenAI-compatible API</td><td>LiteLLM; about 17 ms added at p50 TTFT</td></tr><tr><td>Scheduler</td><td>Chooses which requests run together each step</td><td>Capping <code>--max-num-seqs</code> at 16 improved p99 ITL to 16.9 ms but cut throughput from 5,011 to 1,063 tok/s</td></tr><tr><td>KV cache</td><td>Holds per-request attention state in paged blocks</td><td>Halving the pool from 575,440 to 272,832 tokens did not affect chat, because short prompts never filled it</td></tr><tr><td>Model</td><td>Weights and precision</td><td>Qwen2.5 1.5B Instruct, BF16, 4,096-token max length</td></tr><tr><td>Kernels</td><td>Hardware backend</td><td>CUDA on the L4; CPU backend with AMX on Sapphire Rapids</td></tr></tbody></table></div>
+      <div class="section-intro"><p>Scheduler and memory tuning was tested on chat alone. The interference came from long-prompt prefill competing with chat decode on the same GPU, and separating the workloads removed it.</p></div>
+    </section>
+
     <section class="scoreboard" aria-label="Experiment highlights"><div id="scoreboard" class="score-grid"></div></section>
 
     <section class="section" id="system">
-      <header class="section-header"><span>01</span><div><p>THE SYSTEM WE BUILT</p><h2>One API, two compute pools, two jobs</h2></div></header>
+      <header class="section-header"><span>02</span><div><p>THE SYSTEM WE BUILT</p><h2>One API, two compute pools, two jobs</h2></div></header>
       <div class="section-intro"><p>This was a small production-shaped service in AWS `us-east-2`. Every box is interactive: open it to see its role and the experiment evidence behind it.</p></div>
       <div class="system-diagram" id="systemDiagram" aria-label="Interactive experiment architecture"></div>
       <div id="systemDetail" class="system-detail" hidden></div>
     </section>
 
     <section class="section" id="experiments">
-      <header class="section-header"><span>02</span><div><p>EXPERIMENT RESULTS</p><h2>Seven questions, answered with measurements</h2></div></header>
+      <header class="section-header"><span>03</span><div><p>EXPERIMENT RESULTS</p><h2>Seven questions, answered with measurements</h2></div></header>
       <div class="section-intro"><p>The cards follow the order of the investigation. Every chart and table is rendered from <code>data/results.json</code>, which is generated from the raw benchmark JSON and run log.</p></div>
       <div id="experimentCards" class="experiment-list"></div>
     </section>
 
     <section class="section selector-section" id="selector">
-      <header class="section-header"><span>03</span><div><p>FULL STACK INFERENCE SELECTOR</p><h2>Build from the API request to the power grid</h2></div></header>
+      <header class="section-header"><span>04</span><div><p>FULL STACK INFERENCE SELECTOR</p><h2>Build from the API request to the power grid</h2></div></header>
       <div class="selector-intro"><p>Choose a known path or assemble your own. The 19 layers follow the source architecture and the memory hook <strong>A Cool Cluster Hums Inside</strong>.</p><div class="mode-toggle" role="group" aria-label="Selector mode"><button class="active" data-mode="stack">Stack mode</button><button data-mode="workload">Workload mode</button></div></div>
 
       <div id="stackMode">
@@ -75,7 +88,7 @@
     </section>
 
     <section class="section" id="concepts">
-      <header class="section-header"><span>04</span><div><p>CONCEPTS LAB</p><h2>Touch the mechanics behind the results</h2></div></header>
+      <header class="section-header"><span>05</span><div><p>CONCEPTS LAB</p><h2>Touch the mechanics behind the results</h2></div></header>
       <div class="concept-grid">
         <article class="lab-card"><h3>Prefill vs decode</h3><p>Prefill reads the prompt in parallel. Decode produces one token per step.</p><div class="phase-tabs"><button class="active" data-phase="prefill">Prefill</button><button data-phase="decode">Decode</button></div><div id="phaseViz" class="phase-viz"></div><label>Prompt length: <output id="promptOut">2,048</output> tokens<input id="promptSlider" type="range" min="256" max="4096" step="256" value="2048"></label></article>
         <article class="lab-card"><h3>KV cache calculator</h3><p>Change the model geometry and see how much memory every token consumes.</p><div class="kv-form"><label>Layers<input id="kvLayers" type="number" value="28" min="1"></label><label>KV heads<input id="kvHeads" type="number" value="2" min="1"></label><label>Head dim<input id="kvDim" type="number" value="128" min="1"></label><label>Bytes/value<input id="kvBytes" type="number" value="2" min="0.5" step="0.5"></label></div><div id="kvResult" class="lab-result"></div></article>
@@ -85,25 +98,36 @@
     </section>
 
     <section class="section" id="production">
-      <header class="section-header"><span>05</span><div><p>FROM EXPERIMENT TO PRODUCTION</p><h2>How the lab maps to an AWS service</h2></div></header>
+      <header class="section-header"><span>06</span><div><p>FROM EXPERIMENT TO PRODUCTION</p><h2>How the lab maps to an AWS service</h2></div></header>
       <div class="table-wrap"><table><thead><tr><th>Experiment component</th><th>Production role</th><th>What production adds</th></tr></thead><tbody><tr><td>LiteLLM on one host</td><td>Model gateway and workload router</td><td>Dedicated ECS/EKS service, replicas, authentication, quotas, and health routing</td></tr><tr><td>L4 `g6.xlarge`</td><td>Interactive inference pool</td><td>Multi-AZ node group and scaling on queue depth, TTFT, and running requests</td></tr><tr><td>Sapphire Rapids `c7i.4xlarge`</td><td>Background or overflow pool</td><td>Queue-based jobs, retries, and Spot only when work is interruptible</td></tr><tr><td>vLLM API</td><td>Model-serving container</td><td>Pinned ECR image, startup/readiness probes, canary releases, rollback</td></tr><tr><td>Private VPC connection</td><td>Backend service network</td><td>Private subnets, service discovery, least-privilege security groups</td></tr><tr><td>Benchmark scripts</td><td>Release load test</td><td>Production request distributions and SLO gates in CI</td></tr><tr><td>`/metrics`</td><td>Service telemetry</td><td>Managed Prometheus, CloudWatch, Grafana, traces, and burn-rate alerts</td></tr><tr><td>Local model download</td><td>Weight distribution</td><td>S3/model registry, local NVMe cache, controlled release pipeline</td></tr></tbody></table></div>
     </section>
 
     <section class="section" id="limitations">
-      <header class="section-header"><span>06</span><div><p>EVIDENCE BOUNDARIES</p><h2>Measured, calculated, and still uncertain</h2></div></header>
+      <header class="section-header"><span>07</span><div><p>EVIDENCE BOUNDARIES</p><h2>Measured, calculated, and still uncertain</h2></div></header>
       <div class="evidence-grid"><article><span class="badge measured">MEASURED</span><h3>Direct observations</h3><p>TTFT, ITL, throughput, KV pool, engine comparison, router overhead, and mixed-workload behavior for this exact setup.</p></article><article><span class="badge calculated">CALCULATED</span><h3>Derived from measurements</h3><p>Cost per million output tokens, speedup ratios, the 70% load point, and the 85× TTFT improvement.</p></article><article><span class="badge estimated">ESTIMATED</span><h3>Useful sanity checks</h3><p>Roofline ceilings and theoretical compute or bandwidth explanations. These are not capacity commitments.</p></article></div>
       <div class="limitations"><h3>Limits you should say out loud</h3><ul><li>One small model and one precision were tested.</li><li>The final mixed-workload conditions were run once; variance is unknown.</li><li>CPU sweep runs were short, so their capacity values are upper bounds.</li><li>The router and two benchmark clients shared the four-vCPU GPU host.</li><li>Traffic stayed inside one VPC and one AWS region (`us-east-2`).</li><li>Autoscaling, multi-AZ failover, rolling releases, and sustained observability were not tested.</li><li>Prices are the experiment inputs, not current AWS quotes.</li></ul></div>
     </section>
 
     <section class="section" id="reproduce">
-      <header class="section-header"><span>07</span><div><p>REPRODUCE THE WORK</p><h2>Inspect the evidence, not just the conclusion</h2></div></header>
+      <header class="section-header"><span>08</span><div><p>REPRODUCE THE WORK</p><h2>Inspect the evidence, not just the conclusion</h2></div></header>
       <div class="resource-grid"><a href="https://github.com/abh2050/heterogeneous-llm-inference-on-aws/blob/main/RUNLOG.md"><strong>RUNLOG.md</strong><span>Chronology and full tables</span></a><a href="https://github.com/abh2050/heterogeneous-llm-inference-on-aws/blob/main/PLAN.md"><strong>PLAN.md</strong><span>Execution plan and gates</span></a><a href="https://github.com/abh2050/heterogeneous-llm-inference-on-aws/tree/main/scripts"><strong>scripts/</strong><span>Benchmarks and data build</span></a><a href="https://github.com/abh2050/heterogeneous-llm-inference-on-aws/tree/main/results"><strong>results/</strong><span>Raw benchmark JSON</span></a><a href="https://github.com/abh2050/heterogeneous-llm-inference-on-aws/tree/main/logs"><strong>logs/</strong><span>Server and client logs</span></a><a href="assets/claude-inference-stack.drawio"><strong>draw.io source</strong><span>Editable 19-layer diagram</span></a><a href="assets/notebooklm-mind-map.png"><strong>Mind map</strong><span>Concept relationships</span></a><a href="https://github.com/abh2050/heterogeneous-llm-inference-on-aws/tree/main/app"><strong>Inference Atlas</strong><span>Capacity-planning application</span></a></div>
       <figure class="full-map"><a href="assets/claude-inference-stack.svg"><img src="assets/claude-inference-stack.svg" loading="lazy" alt="Full nineteen-layer inference stack map from client applications to the power grid"></a><figcaption>Full stack map · click to open the scalable version</figcaption></figure>
     </section>
 
     <section class="section reading" id="reading">
-      <header class="section-header"><span>08</span><div><p>FURTHER READING</p><h2>The papers behind the stack</h2></div></header>
+      <header class="section-header"><span>09</span><div><p>FURTHER READING</p><h2>The papers behind the stack</h2></div></header>
       <ol><li><strong>PagedAttention</strong> — explains the block-based KV memory design that made vLLM practical at high concurrency.</li><li><strong>Orca</strong> — introduced iteration-level scheduling, the foundation of continuous batching.</li><li><strong>Sarathi-Serve</strong> — studies chunked prefill and the trade between throughput and decode stalls.</li><li><strong>DistServe</strong> — separates prefill and decode so each phase can scale for its own bottleneck.</li><li><strong>Splitwise</strong> — explores phase splitting across heterogeneous hardware and its system-level tradeoffs.</li></ol>
+    </section>
+
+    <section class="section reading" id="production-gaps">
+      <header class="section-header"><span>10</span><div><p>BEYOND THE EXPERIMENT</p><h2>Production gaps</h2></div></header>
+      <div class="section-intro"><p>This was a small experiment. A production deployment would also need:</p></div>
+      <ol><li>Repeatable installs with pinned containers for each pool.</li><li>A sizing method that maps model, concurrency, and context length to pool layout and engine settings.</li><li>Workload classification and routing rules tied to latency targets.</li><li>Authentication, per-team quotas, and audit logs at the gateway.</li><li>Dashboards for p99 TTFT, ITL, queue depth, and cost per million tokens.</li><li>An offline install path for networks without internet access.</li></ol>
+    </section>
+
+    <section class="section reading" id="next-steps">
+      <header class="section-header"><span>11</span><div><p>FUTURE WORK</p><h2>Next steps</h2></div></header>
+      <ol><li>Repeat the test with a different GPU in the fast pool, including an Intel Arc Pro B60, and a Xeon 6 CPU pool.</li><li>Split prefill and decode into separate pools and measure KV cache transfer cost.</li><li>Test a larger mixture of experts model with FP8 weights and an FP8 KV cache.</li><li>Repeat each run three times and report the spread.</li></ol>
     </section>
   </main>
 

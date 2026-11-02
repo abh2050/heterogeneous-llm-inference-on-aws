@@ -1,4 +1,50 @@
-# Heterogeneous LLM inference on AWS
+# Heterogeneous LLM Inference on AWS
+
+Can routing by service target, with interactive chat on a GPU pool and long-prompt RAG on a CPU pool, protect chat latency when both workloads arrive at once?
+
+**Result:** A small amount of RAG traffic on the shared GPU pushed chat p99 time to first token from 91 ms to 24.7 seconds. Routing RAG to the CPU pool brought it back to 289 ms, with chat throughput nearly unchanged.
+
+| Run | Chat p99 TTFT | Chat p99 ITL | Chat output tok/s |
+|---|---:|---:|---:|
+| Chat alone on GPU | 91 ms | 30.2 ms | 2,971 |
+| RAG shared on GPU | 24,702 ms | 203.7 ms | 2,009 |
+| RAG routed to CPU | 289 ms | 112.0 ms | 2,942 |
+
+The CPU pool was not faster or cheaper per token. It helped by isolating a delay-tolerant workload from interactive traffic.
+
+**Hardware:** GPU pool on an AWS g6.xlarge (NVIDIA L4, 24 GB). CPU pool on an AWS c7i.4xlarge (Intel Xeon, Sapphire Rapids) running vLLM's CPU backend with AMX.
+
+**Live site:** https://abh2050.github.io/heterogeneous-llm-inference-on-aws/
+
+## Serving internals exercised
+
+| Component | Role | Setting or result in this experiment |
+|---|---|---|
+| Router | Maps model names to pools behind one OpenAI-compatible API | LiteLLM; about 17 ms added at p50 TTFT |
+| Scheduler | Chooses which requests run together each step | Capping `--max-num-seqs` at 16 improved p99 ITL to 16.9 ms but cut throughput from 5,011 to 1,063 tok/s |
+| KV cache | Holds per-request attention state in paged blocks | Halving the pool from 575,440 to 272,832 tokens did not affect chat, because short prompts never filled it |
+| Model | Weights and precision | Qwen2.5 1.5B Instruct, BF16, 4,096-token max length |
+| Kernels | Hardware backend | CUDA on the L4; CPU backend with AMX on Sapphire Rapids |
+
+Scheduler and memory tuning was tested on chat alone. The interference came from long-prompt prefill competing with chat decode on the same GPU, and separating the workloads removed it.
+
+## Production gaps
+
+This was a small experiment. A production deployment would also need:
+
+1. Repeatable installs with pinned containers for each pool.
+2. A sizing method that maps model, concurrency, and context length to pool layout and engine settings.
+3. Workload classification and routing rules tied to latency targets.
+4. Authentication, per-team quotas, and audit logs at the gateway.
+5. Dashboards for p99 TTFT, ITL, queue depth, and cost per million tokens.
+6. An offline install path for networks without internet access.
+
+## Next steps
+
+1. Repeat the test with a different GPU in the fast pool, including an Intel Arc Pro B60, and a Xeon 6 CPU pool.
+2. Split prefill and decode into separate pools and measure KV cache transfer cost.
+3. Test a larger mixture of experts model with FP8 weights and an FP8 KV cache.
+4. Repeat each run three times and report the spread.
 
 This project asks a practical serving question:
 
@@ -161,6 +207,8 @@ The 16-sequence cap traded throughput for smoother token streaming. Only 16 requ
 
 The tuning run also exposed a methodology problem: the first benchmark after restarting a server included model warm-up and produced p99 TTFT around 4.3 seconds, versus about 0.2 seconds after warm-up. All performance tests need an explicit warm-up and a sufficiently long measurement window.
 
+Capping concurrent sequences trades throughput for smoother per-request output.
+
 ### 5. The CPU was a useful isolation tier, not a faster inference tier
 
 The Intel CPU node used seven physical Sapphire Rapids cores for model compute and left one core for the API server and benchmark client. Single-stream generation was about 15 tok/s after warm-up.
@@ -173,15 +221,11 @@ That does not make the CPU useless. It means the CPU is a poor replacement for t
 
 This was the final experiment. Interactive chat ran at 24 req/s, about 70% of the measured sustained GPU capacity. Background RAG ran at 0.75 req/s.
 
-| Run | Where background RAG ran | Chat p99 TTFT | Chat p99 ITL | Chat output tok/s |
-|---|---|---:|---:|---:|
-| Chat alone | No background load | 91 ms | 30.2 ms | 2,971 |
-| A: shared | Same GPU as chat | **24,702 ms** | **203.7 ms** | 2,009 |
-| B: offloaded | CPU through LiteLLM | **289 ms** | **112.0 ms** | 2,942 |
+See the results table at the top of this README.
 
 Moving RAG to the CPU changed chat p99 TTFT from 24.7 seconds to 289 ms—an 85× improvement—and restored throughput close to the chat-only result. p99 ITL improved from 204 ms to 112 ms.
 
-Run B was still worse than chat alone and narrowly missed the 100 ms ITL target. The GPU node had only four vCPUs and was also running the router and two benchmark clients, so CPU contention on that node probably contributed. This was not isolated, and each condition was run only once. The direction of the result is strong; the exact improvement needs repeated trials on a cleaner topology.
+The routed run was still worse than chat alone and narrowly missed the 100 ms ITL target. The GPU node had only four vCPUs and was also running the router and two benchmark clients, so CPU contention on that node probably contributed. This was not isolated, and each condition was run only once. The direction of the result is strong; the exact improvement needs repeated trials on a cleaner topology.
 
 The background job itself completed more slowly on the CPU: 186 seconds versus 164 seconds on the overloaded GPU. That was the intended trade. The batch user waited a little longer so interactive users did not wait tens of seconds.
 
