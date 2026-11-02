@@ -7,7 +7,6 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230d786b'/%3E%3Cpath d='M8 23V16h5v7zm0-10V8h5v5zm10 10V8h5v15z' fill='white'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="/static/styles.css">
   <link rel="stylesheet" href="/static/guided.css">
-  <script defer src="/static/vendor/plotly.min.js"></script>
   <script defer src="/static/storage.js"></script>
   <script defer src="/static/app.js"></script>
   <script defer src="/static/guided.js"></script>
@@ -34,7 +33,7 @@
 
     <section class="g-step" id="step-people"><div class="g-eyebrow">STEP 3</div><h2>How many people?</h2>
       <div class="g-sliders">
-        <label>Total users <output id="g-total-out"></output><input id="g-total" type="range" min="1" max="10000" step="1" value="100" aria-describedby="g-people-out"></label>
+        <label>Total users <output id="g-total-out"></output><input id="g-total" type="range" min="0" max="1000" step="1" value="500" aria-describedby="g-people-out"></label>
         <label>Share active at the same time <output id="g-active-out"></output><input id="g-active" type="range" min="1" max="100" step="1" value="10"></label>
       </div>
       <p class="g-big" id="g-people-out" aria-live="polite"></p>
@@ -59,6 +58,8 @@
 
     <section class="g-step" id="glossary"><div class="g-eyebrow">GLOSSARY</div><h2>Every term in one sentence</h2><dl id="g-glossary"></dl></section>
   </div>
+
+  <a class="g-summary" id="g-summary" href="#results" hidden></a>
 
   <details class="g-advanced" id="advanced">
     <summary><span><b>Advanced</b> · detailed roofline results, quick estimate, benchmarks, exact precision, assumptions, exports</span></summary>

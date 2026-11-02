@@ -60,10 +60,13 @@ const GLOSSARY = {
 function T(key, text) {const g = GLOSSARY[key]; return `<a class="term" href="#g-${key}" data-term="${key}" title="${esc(g[1])} (see glossary)">${text ?? g[0]}</a>`;}
 
 // ---- labels: every number gets measured | calculated | estimated plus an explanation
-function lab(value, kind, how) {return `<span class="g-num">${value}</span><span class="tag tag-${kind}">${kind}</span><button type="button" class="info" data-tip="${esc(how)}" aria-label="How this was ${kind}: ${esc(how)}">i</button>`;}
+function lab(value, kind, how) {return `<span class="g-lab"><span class="g-num">${value}</span><span class="tag tag-${kind}">${kind}</span><button type="button" class="info" data-tip="${esc(how)}" aria-label="How this was ${kind}: ${esc(how)}">i</button></span>`;}
 function evidenceKind(c) {return c.evidence === 'Measured' ? 'measured' : 'calculated';}
 
 // ---- derived guided inputs
+// The users slider is logarithmic (0..1000 maps to 1..10,000) so small teams get as much travel as large ones.
+function usersFromSlider(v) {const n = 10 ** (v / 250); return n < 20 ? Math.round(n) : Number(n.toPrecision(2));}
+function sliderFromUsers(u) {return Math.round(Math.log10(Math.max(1, u)) * 250);}
 function peakUsers() {return Math.max(1, Math.round(G.totalUsers * G.activePct / 100));}
 function precisionLabel() {return PRECISIONS[G.precision];}
 
@@ -160,20 +163,29 @@ function renderResults() {
       <p class="g-note">of ${fmt(physical / 1e9, 0)} GB on each ${esc(h.name)}${c.tp > 1 ? ` (${c.tp} share the model)` : ''}.</p></div>
     <div class="g-card"><h3>Speed for each person</h3><div class="g-value">${lab(fmt(tps, 0) + ' tokens/s', kind, 'One divided by the time the chip needs for each word at this many people. Calculated from memory bandwidth and compute; a real benchmark replaces it.')}</div>
       <div class="g-gauge" role="img" aria-label="${fmt(tps, 0)} tokens per second; comfortable at 20"><span class="you" style="left:${at(tps)}">${fmt(tps, 0)}</span><span class="pin" style="left:${at(READING_TPS)}"></span>
-      <span class="mark" style="left:${at(10)}">10 laggy</span><span class="mark" style="left:${at(25)}">20–30 comfortable</span><span class="mark" style="left:${at(55)}">50+ instant</span></div>
+      </div>
+      <div class="g-scale" aria-hidden="true"><span>under 10 laggy</span><span>20–30 comfortable</span><span>50+ instant</span></div>
       <p class="g-note">The dark line marks 20 tokens per second. ${T('tps', 'What is a token per second?')}</p></div>
     <div class="g-card"><h3>Wait before the first word (${T('ttft', 'TTFT')})</h3><div class="g-value">${lab(fmt(c.ttft_service_s, 2) + ' s', kind, 'Time to read the whole question (prefill) plus the first step of the answer. Calculated; queueing is not included.')}</div>
-      <p class="g-note">${waitWord(c.ttft_service_s)}. Instant under 1 second, fine under 2, too slow over 5.</p></div>
+      <p class="g-note">${waitWord(c.ttft_service_s).replace(/^./, x => x.toUpperCase())}. Under 1 second feels instant, under 2 is fine, over 5 is too slow.</p></div>
     <div class="g-card"><h3>Cost</h3><div class="g-value">${lab(money(monthly, 0) + ' / month', 'calculated', `Hourly price of ${c.device_count} device(s) × ${HOURS_PER_MONTH} hours.`)}</div>
       <p>${lab(money(perM, 2) + ' per million tokens', 'calculated', 'Hourly cost ÷ (words actually served per second × 3600) × 1,000,000, using the request rate for your users.')}</p>
       <label class="g-note">Cloud API price per million tokens (edit): $<input class="g-input" id="g-api" type="number" min="0" step="0.1" value="${esc(G.apiPrice)}" style="width:80px"></label>
-      <p class="g-note">${cheaper == null ? '' : cheaper >= 0 ? `About ${fmt(cheaper, 0)}% cheaper than that API price.` : `About ${fmt(-cheaper, 0)}% more than that API price.`} The $${esc(G.apiPrice)} default is a placeholder, not a quote.</p></div>
+      <p class="g-note">${cheaper == null ? '' : perM > 0 && api / perM >= 2 ? `About ${fmt(api / perM, 0)}× cheaper than that API price.` : cheaper >= 0 ? `About ${fmt(cheaper, 0)}% cheaper than that API price.` : `About ${fmt(-cheaper, 0)}% more than that API price.`} The $${esc(G.apiPrice)} default is a placeholder, not a quote.</p></div>
   </div>
   <h3>Every option that fits, cheapest first</h3>
   <div class="g-table-wrap"><table class="g-table"><thead><tr><th></th><th>Hardware</th><th>Devices</th><th>Speed each</th><th>Wait</th><th>$ / month</th><th>$ / M tokens</th></tr></thead><tbody>${opts.map(x => `<tr data-hw="${esc(x.c.hardware_id)}" tabindex="0" class="${x.c.hardware_id === c.hardware_id ? 'sel' : ''}"><td><span class="dot ${x.mark}" title="${x.mark === 'green' ? 'Meets speed and wait targets' : x.mark === 'yellow' ? 'Close: slightly slow' : 'Too slow'}"></span><span class="sr">${x.mark}</span></td><td>${esc(hw(x.c.hardware_id).name)}</td><td>${x.c.device_count}</td><td>${fmt(1 / x.c.tpot_service_s, 0)} tok/s</td><td>${fmt(x.c.ttft_service_s, 2)} s</td><td>${money(x.c.hourly_usd * HOURS_PER_MONTH, 0)}</td><td>${money(x.c.cost_per_million_output, 2)}</td></tr>`).join('')}</tbody></table></div>
   <p class="g-note"><span class="dot green"></span> meets both targets (20+ tokens/s, wait under 2 s) · <span class="dot yellow"></span> close · <span class="dot red"></span> under 10 tokens/s or over 5 s. All values are <span class="tag tag-calculated">calculated</span> from published specs; benchmark to confirm.</p>
   ${missing.length ? `<p class="g-note">${missing.length} catalog entr${missing.length > 1 ? 'ies are' : 'y is'} not shown because specs or prices are “not published”: ${esc(missing.slice(0, 6).map(r => r.name).join(', '))}${missing.length > 6 ? '…' : ''}. Fill them in under Advanced → Workload → Hardware catalog.</p>` : ''}`;
   el.innerHTML = html;
+  renderSummary(o);
+}
+function renderSummary(o) {
+  const el = document.getElementById('g-summary'); if (!el) return;
+  if (!o) {el.hidden = true; return;}
+  const c = o.c;
+  el.innerHTML = `<span class="dot ${o.mark}"></span><b>${c.device_count} × ${esc(hw(c.hardware_id).name)}</b><span>${fmt(1 / c.tpot_service_s, 0)} tok/s each</span><span>${fmt(c.ttft_service_s, 2)} s first word</span><span>${money(c.hourly_usd * HOURS_PER_MONTH, 0)} / month</span><span class="go">Full result ↓</span>`;
+  el.hidden = false;
 }
 function missingForm(r) {
   const need = r.missing.map(k => k === 'price' ? 'a price per hour' : k.replace(/_/g, ' '));
@@ -212,10 +224,10 @@ function art(kind) {
   const box = (x, y, w, h, f) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4" ${f ? `fill="currentColor" fill-opacity=".18"` : ''}/>`;
   switch (kind) {
     case 'prefill': return s(box(10, 20, 100, 30, 1) + '<text x="20" y="40" font-size="12" fill="currentColor" stroke="none">read all at once</text>' + [130, 160, 190].map(x => box(x, 20, 24, 30)).join('') + '<text x="128" y="64" font-size="10" fill="currentColor" stroke="none">one word at a time</text>');
-    case 'kv': return s([0, 1, 2, 3, 4].map(i => box(20 + i * 8, 54 - i * 10, 60, 12, 1)).join('') + box(140, 44, 60, 12, 1) + box(140, 28, 60, 12, 1) + '<text x="100" y="40" font-size="11" fill="currentColor" stroke="none">→ grows</text>');
-    case 'precision': return s([['BF16', 16, 60], ['FP8', 8, 36], ['INT4', 4, 20]].map(([n, b, h], i) => box(30 + i * 70, 62 - h, 40, h, 1) + `<text x="${34 + i * 70}" y="68" font-size="10" fill="currentColor" stroke="none">${n}=${b / 8}B</text>`).join(''));
+    case 'kv': return s([0, 1, 2, 3, 4].map(i => box(20 + i * 8, 54 - i * 10, 60, 12, 1)).join('') + box(170, 44, 60, 12, 1) + box(170, 28, 60, 12, 1) + '<text x="118" y="44" font-size="11" fill="currentColor" stroke="none">→ grows</text>');
+    case 'precision': return s([['BF16', 16, 60], ['FP8', 8, 36], ['INT4', 4, 20]].map(([n, b, h], i) => box(30 + i * 70, 54 - h * 0.8, 40, h * 0.8, 1) + `<text x="${30 + i * 70}" y="67" font-size="10" fill="currentColor" stroke="none">${n}=${b / 8}B</text>`).join(''));
     case 'batch': return s([0, 1, 2, 3, 4].map(i => `<circle cx="${20 + i * 20}" cy="35" r="7"/>`).join('') + '<path d="M125 35h30M148 28l8 7-8 7"/>' + box(165, 15, 60, 40, 1));
-    case 'engines': return s([['llama.cpp', 28], ['Ollama', 22], ['vLLM', 40], ['+ llm-d', 54]].map(([n, h], i) => box(10 + i * 58, 62 - h, 50, h, 1) + `<text x="${14 + i * 58}" y="${58 - h + 4}" font-size="10" fill="currentColor" stroke="none">${n}</text>`).join(''));
+    case 'engines': return s([['llama.cpp', 28], ['Ollama', 22], ['vLLM', 40], ['+ llm-d', 54]].map(([n, h], i) => box(10 + i * 58, 62 - h, 50, h, 1) + `<text x="${14 + i * 58}" y="${62 - h + 14}" font-size="9" fill="currentColor" stroke="none">${n}</text>`).join(''));
     case 'sched': return s('<circle cx="30" cy="22" r="9"/><path d="M30 31v14M20 38h20"/>' + box(90, 10, 40, 50, 1) + box(150, 10, 40, 50, 1) + '<path d="M44 30h40M144 30h0"/>');
     case 'shard': return s([0, 1, 2, 3].map(i => box(15 + i * 55, 20, 45, 30, 1)).join('') + '<path d="M60 35h10M115 35h10M170 35h10"/>');
     case 'disagg': return s(box(15, 12, 80, 46, 1) + box(145, 12, 80, 46, 1) + '<path d="M100 35h40M132 28l8 7-8 7"/><text x="22" y="40" font-size="11" fill="currentColor" stroke="none">prefill</text><text x="156" y="40" font-size="11" fill="currentColor" stroke="none">decode</text>');
@@ -249,7 +261,7 @@ function renderStatic() {
   syncInputs();
 }
 function syncInputs() {
-  document.getElementById('g-total').value = G.totalUsers; document.getElementById('g-active').value = G.activePct;
+  document.getElementById('g-total').value = sliderFromUsers(G.totalUsers); document.getElementById('g-active').value = G.activePct;
   document.getElementById('g-total-out').textContent = fmt(G.totalUsers, 0); document.getElementById('g-active-out').textContent = G.activePct + '%';
   document.getElementById('g-people-out').innerHTML = `About ${lab(fmt(peakUsers(), 0) + ' people', 'calculated', 'Total users × the share active at the same time, rounded, at least 1.')} typing at the same moment`;
   for (const [sel, key] of [['#g-jobs', 'job'], ['#g-quality', 'precision']]) document.querySelectorAll(`${sel} .g-choice`).forEach(b => b.setAttribute('aria-pressed', b.dataset.id === G[key]));
@@ -276,7 +288,7 @@ document.addEventListener('click', async (event) => {
 });
 document.addEventListener('keydown', (e) => {if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('tr[data-hw]')) {e.preventDefault(); e.target.click();}});
 document.addEventListener('input', (event) => {
-  if (event.target.id === 'g-total') {G.totalUsers = Number(event.target.value); syncInputs(); schedule();}
+  if (event.target.id === 'g-total') {G.totalUsers = usersFromSlider(Number(event.target.value)); syncInputs(); schedule();}
   else if (event.target.id === 'g-active') {G.activePct = Number(event.target.value); syncInputs(); schedule();}
   else if (event.target.id === 'g-api') {G.apiPrice = event.target.value; renderResults(); document.getElementById('g-api')?.focus();}
   else if (event.target.id === 'g-model') {clearTimeout(G.searchTimer); G.searchTimer = setTimeout(() => modelSearch(event.target), 300);}
@@ -327,6 +339,9 @@ async function loadExample() {
 
 document.addEventListener('atlas-ready', async () => {
   renderStatic(); renderModelCard();
+  // Hide the summary bar while the full result is on screen.
+  const bar = document.getElementById('g-summary'), results = document.getElementById('results');
+  if (bar && results && 'IntersectionObserver' in window) new IntersectionObserver(([e]) => bar.classList.toggle('off', e.isIntersecting), {rootMargin: '0px 0px -20% 0px'}).observe(results);
   await applyGuided();
 });
 if (typeof state !== 'undefined' && state.presets && state.workload) document.dispatchEvent(new Event('atlas-ready'));

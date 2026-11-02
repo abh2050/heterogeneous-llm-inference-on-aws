@@ -66,15 +66,20 @@ function renderShell() {
   document.getElementById('scenarios').innerHTML = names.length ? names.map(n => `<button class="scenario-item" data-action="load-scenario" data-name="${esc(n)}">◇ &nbsp;${esc(n)}</button>`).join('') : '<div class="saved-empty">Save a plan to compare assumptions over time.</div>';
   document.getElementById('adapter-label').textContent = state.capabilities.configured ? state.capabilities.service_name : 'JSON import available';
 }
+// Plotly is about 4.8 MB and only the Advanced charts use it, so load it on first use instead of blocking the page.
+let plotlyLoading;
+function plotly() {
+  return plotlyLoading ??= new Promise((resolve, reject) => {const s=document.createElement('script'); s.src='/static/vendor/plotly.min.js'; s.onload=()=>resolve(window.Plotly); s.onerror=()=>{plotlyLoading=null; reject(new Error('Charts failed to load.'));}; document.head.append(s);});
+}
 async function render() {
   renderShell();
   const renderers=[renderModel,renderWorkload,renderCompare,renderBenchmarks,renderExport];
   document.getElementById('main').innerHTML=renderers[state.page]();
   if (state.page === 2) {
-    if (state.chart) Plotly.newPlot('tpot-chart', state.chart.data, state.chart.layout, {responsive:true,displayModeBar:false});
+    if (state.chart) (await plotly()).newPlot('tpot-chart', state.chart.data, state.chart.layout, {responsive:true,displayModeBar:false});
     const c=selected();
     if(c?.memory && Object.keys(c.memory).length) {
-      try {const chart=await api('memory',c);if(document.getElementById('memory-chart')) Plotly.newPlot('memory-chart',chart.data,chart.layout,{responsive:true,displayModeBar:false});} catch(e){toast(e.message,true);}
+      try {const chart=await api('memory',c);if(document.getElementById('memory-chart')) (await plotly()).newPlot('memory-chart',chart.data,chart.layout,{responsive:true,displayModeBar:false});} catch(e){toast(e.message,true);}
     }
   }
 }

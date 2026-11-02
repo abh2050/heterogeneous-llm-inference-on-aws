@@ -22,6 +22,8 @@ Calculated cost was about $0.055 per million output tokens on the GPU pool (sust
 
 **Live site:** https://abh2050.github.io/heterogeneous-llm-inference-on-aws/
 
+**Capacity planner (Inference Atlas):** https://inference-atlas-one.vercel.app
+
 ## Serving internals exercised
 
 | Component | Role | Setting or result in this experiment |
@@ -72,7 +74,7 @@ There are three related pieces:
 |---|---|
 | **AWS experiment** | Measures how GPU, CPU, routing, batching, KV cache, and mixed workloads behave with real requests. This README explains it. |
 | **Interactive stack explainer** | Shows how gateways, routers, engines, runtimes, accelerators, networking, and operations fit together. [Open it](https://abh2050.github.io/heterogeneous-llm-inference-on-aws/). |
-| **Inference Atlas** | Turns these ideas into a capacity-planning application. It estimates memory, speed, latency, and cost for other models and hardware. [Run the app](app/README.md). |
+| **Inference Atlas** | Turns these ideas into a capacity-planning application. It estimates memory, speed, latency, and cost for other models and hardware. [Open the live app](https://inference-atlas-one.vercel.app) or [run it locally](app/README.md). |
 
 The experiment produces evidence. The explainer makes the architecture legible. The planner helps apply the same reasoning to a new service.
 
